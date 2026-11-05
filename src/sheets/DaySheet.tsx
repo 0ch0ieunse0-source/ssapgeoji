@@ -1,19 +1,26 @@
 import { useEffect, useRef, useState } from "react";
-import { MoneyInput, TxRow, Won } from "../components/common";
-import { Sheet, SheetHead } from "../components/Sheet";
-import { DOW, md } from "../lib/date";
+import { MoneyInput, Won } from "../components/common";
+import { Sheet } from "../components/Sheet";
+import { catVar } from "../lib/cats";
+import { dOf, DOW, md, sd } from "../lib/date";
 import { parse, won } from "../lib/format";
-import { getDay, isNoSpend, limitOf, setDay, spentOf } from "../lib/ledger";
-import { sd } from "../lib/date";
+import { getDay, isNoSpend, limitOf, mineOf, setDay, spentOf } from "../lib/ledger";
+import { roundsLabel } from "../lib/split";
 import { tripSpent } from "../lib/trip";
 import { useApp } from "../state/app";
 import { ApptSheet, type ApptTarget } from "./ApptSheet";
 
-/** 하루 상세: 내역 삭제, 그날 한도 바꾸기, 무지출·약속 날 표시 */
+const dday = (k: string, today: string) => {
+  const n = Math.round((dOf(k).getTime() - dOf(today).getTime()) / 86400000);
+  return n === 0 ? "오늘" : n > 0 ? "D-" + n : -n + "일 전";
+};
+
+/** 그날 카드 (달력 가운데): 내역, 남은 한도, + 이날 쓴 돈 추가, ⋯(한도 바꾸기·무지출·약속) */
 export function DaySheet() {
-  const { S, dayKey, closeDay, model, update, toast, openEntry, toggleNoSpend } = useApp();
+  const { S, today, dayKey, closeDay, model, update, toast, openEntry, toggleNoSpend } = useApp();
   const d = model && dayKey ? model.dayByKey(dayKey) : undefined;
   const [limitV, setLimitV] = useState("");
+  const [more, setMore] = useState(false);
   const [appt, setAppt] = useState<ApptTarget>(null);
   const limRef = useRef<HTMLInputElement>(null);
   const l = d ? limitOf(S.days, d) : 0;
@@ -25,6 +32,7 @@ export function DaySheet() {
   useEffect(() => {
     if (document.activeElement !== limRef.current) setLimitV(l.toLocaleString("ko-KR"));
   }, [l, dayKey, S]);
+  useEffect(() => setMore(false), [dayKey]);
 
   const content = (() => {
     if (!d || !model) return null;
@@ -34,6 +42,8 @@ export function DaySheet() {
     const isAppt = d.tag === "약속";
     const trip = d.trip;
     const tSpent = trip ? tripSpent(S.days, trip) : 0;
+    const ns = isNoSpend(S.days, d.key);
+    const sub = [dday(d.key, today), isAppt ? cfg.apptNames?.[d.key] || "약속" : "", trip ? trip.name : ""].filter(Boolean).join(" · ");
 
     const saveLimit = (v: number | null) => {
       update((data) => setDay(data.days, d.key, { limit: v }));
@@ -43,80 +53,120 @@ export function DaySheet() {
 
     return (
       <>
-        <SheetHead id="dayTitle" title={md(d.date) + " (" + DOW[d.wd] + ")" + (isAppt ? " · " + (cfg.apptNames?.[d.key] || "약속") : trip ? " · " + trip.name : "")} onClose={closeDay} />
-        <div className="tiles">
-          <div className="tile">
-            <span className="k">{trip ? "이날 쓴 돈" : "쓴 돈 (내 몫)"}</span>
-            <span className="v">{won(trip ? spentOf(S.days, d.key) : s)}</span>
+        <div className="dc-head">
+          <div>
+            <h2 id="dayTitle">{md(d.date) + " (" + DOW[d.wd] + ")"}</h2>
+            <span className={"dc-sub" + (isAppt ? " appt" : trip ? " trip" : "")}>{sub}</span>
           </div>
-          <div className="tile">
-            <span className="k">{trip ? "여행 남은 돈" : "남은 한도"}</span>
-            <Won className="v" n={trip ? trip.budget - tSpent : l - s} />
-          </div>
-        </div>
-        {trip && (
-          <p className="hint">
-            {trip.name + " " + sd(trip.start) + "~" + sd(trip.end) + " · 예산 " + won(trip.budget) + " 중 " + won(tSpent) + " 썼어요. 여행 기간에는 하루 한도 없이 예산 안에서 써요." + (trip.fund === "separate" ? " (따로 모아 둔 돈이라 생활비에서 빠지지 않아요)" : "")}
-          </p>
-        )}
-        <ul className="tx">
-          {items.map((it) => (
-            <TxRow
-              key={it.id}
-              it={it}
-              onDelete={(e) => {
-                e.stopPropagation();
-                update((data) => setDay(data.days, d.key, { items: getDay(data.days, d.key).items.filter((x) => x.id !== it.id) }));
-                toast("기록을 지웠어요.");
-              }}
-            />
-          ))}
-        </ul>
-        {items.length === 0 && <p className="hint">이날 기록이 없어요.</p>}
-        {!trip && (
-        <div className="limit-edit">
-          <label htmlFor="limitInput" className="k">
-            이날 한도
-          </label>
-          <MoneyInput id="limitInput" ref={limRef} value={limitV} onValue={setLimitV} />
-          <button className="btn line" onClick={() => saveLimit(parse(limitV))}>
-            바꾸기
+          <button className="x" aria-label="더보기" aria-expanded={more} onClick={() => setMore(!more)}>
+            ⋯
           </button>
-          <button className="btn line" onClick={() => saveLimit(null)}>
-            원래대로
+          <button className="x" aria-label="닫기" onClick={closeDay}>
+            ✕
           </button>
         </div>
-        )}
-        <div className="row">
-          {items.length === 0 && (
-            <button className="btn line" style={{ flex: 1 }} onClick={() => toggleNoSpend(d.key)}>
-              {isNoSpend(S.days, d.key) ? "무지출 취소" : "무지출로 표시"}
-            </button>
-          )}
-          <button className="btn line" style={{ flex: 1 }} onClick={() => setAppt({ day: d.key, mode: trip ? "trip" : isAppt ? "appt" : "new", trip })}>
-            {trip ? "여행 수정" : isAppt ? "약속 수정" : "약속 추가"}
-          </button>
-          {d.key <= cur.end && (
-            <button
-              className="btn soft"
-              style={{ flex: 1 }}
-              onClick={() => {
-                const k = d.key;
-                closeDay();
-                openEntry(k);
-              }}
-            >
-              이날 쓴 돈 추가
-            </button>
+
+        <div className="dc-sum">
+          {trip ? (
+            <>
+              <span>{"이날 " + won(s) + " 씀"}</span>
+              <span>
+                {trip.name + " 남은 돈 "}
+                <Won n={trip.budget - tSpent} />
+              </span>
+            </>
+          ) : (
+            <>
+              <span>{"쓴 돈 " + won(s)}</span>
+              <span>
+                {"남은 한도 "}
+                <Won n={l - s} />
+              </span>
+            </>
           )}
         </div>
+        {trip && <p className="hint">{sd(trip.start) + "~" + sd(trip.end) + " · 예산 " + won(trip.budget) + " 중 " + won(tSpent) + " 썼어요" + (trip.fund === "separate" ? " (따로 모아 둔 돈)" : "")}</p>}
+
+        {more && (
+          <div className="dc-more">
+            {!trip && (
+              <div className="limit-edit">
+                <label htmlFor="limitInput" className="k">
+                  이날 한도
+                </label>
+                <MoneyInput id="limitInput" ref={limRef} value={limitV} onValue={setLimitV} />
+                <button className="btn line" onClick={() => saveLimit(parse(limitV))}>
+                  바꾸기
+                </button>
+                <button className="btn line" onClick={() => saveLimit(null)}>
+                  원래대로
+                </button>
+              </div>
+            )}
+            <div className="row">
+              {items.length === 0 && (
+                <button className="btn line" style={{ flex: 1 }} onClick={() => toggleNoSpend(d.key)}>
+                  {ns ? "무지출 취소" : "무지출로 표시"}
+                </button>
+              )}
+              <button className="btn line" style={{ flex: 1 }} onClick={() => setAppt({ day: d.key, mode: trip ? "trip" : isAppt ? "appt" : "new", trip })}>
+                {trip ? "여행 수정" : isAppt ? "약속 수정" : "약속 추가"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {items.length > 0 ? (
+          <ul className="evlist">
+            {items.map((it) => {
+              const subs = [it.cat || "기타", (it.pay || "check") === "card" ? "신용카드" : "체크·현금"];
+              if (it.amount > mineOf(it)) subs.push("결제 " + won(it.amount) + (it.rounds?.length ? "(" + roundsLabel(it.rounds.length) + ")" : ""));
+              return (
+                <li key={it.id} style={{ borderLeftColor: catVar(it.cat) }}>
+                  <span className="t">
+                    <b>{it.memo || it.cat || "기타"}</b>
+                    <span>{subs.join(" · ")}</span>
+                  </span>
+                  <span className="a">
+                    <b>{"-" + won(mineOf(it))}</b>
+                    <button
+                      className="del"
+                      aria-label={won(it.amount) + " 기록 삭제"}
+                      onClick={() => {
+                        update((data) => setDay(data.days, d.key, { items: getDay(data.days, d.key).items.filter((x) => x.id !== it.id) }));
+                        toast("기록을 지웠어요.");
+                      }}
+                    >
+                      삭제
+                    </button>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p className="dc-empty">{ns ? "무지출 성공이에요." : "이날 기록이 없어요."}</p>
+        )}
+
+        {d.key <= cur.end && (
+          <button
+            className="dc-add"
+            onClick={() => {
+              const k = d.key;
+              closeDay();
+              openEntry(k);
+            }}
+          >
+            ＋ 이날 쓴 돈 추가
+          </button>
+        )}
       </>
     );
   })();
 
   return (
     <>
-      <Sheet open={!!d} onClose={closeDay} labelledBy="dayTitle">
+      <Sheet open={!!d} onClose={closeDay} labelledBy="dayTitle" center>
         {content}
       </Sheet>
       {model && <ApptSheet target={appt} onClose={() => setAppt(null)} />}

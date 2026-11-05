@@ -37,3 +37,10 @@ describe("금액 표시", () => {
     expect(man(400000)).toBe("40만");
   });
 });
+
+describe("조사", () => {
+  it("받침에 맞게 을/를", async () => {
+    const { eulReul } = await import("./format");
+    expect([eulReul("대구"), eulReul("부산 여행"), eulReul("제주")]).toEqual(["대구를", "부산 여행을", "제주를"]);
+  });
+});

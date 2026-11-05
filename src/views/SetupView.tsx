@@ -7,6 +7,7 @@ import { tripLength, tripsOverlap, type Trip, type TripFund } from "../lib/trip"
 import { EMPTY, normalize } from "../lib/storage";
 import type { Data, Fixed, Settings } from "../lib/types";
 import { PageHead } from "../components/PageHead";
+import { RangePicker } from "../components/RangePicker";
 import { Icon } from "../components/common";
 import { ACCENTS, accentLabel, accentOf, applyAccent, type AccentId } from "../lib/theme";
 import { currentUnread } from "../notices";
@@ -289,16 +290,16 @@ export function SetupView({ section = "" }: { section?: string }) {
             <label htmlFor="tName">여행 이름</label>
             <input id="tName" maxLength={14} placeholder="예: 부산 여행" value={tName} onChange={(e) => setTName(e.target.value)} />
           </div>
-          <div className="row">
-            <div className="field">
-              <label htmlFor="tStart">시작일</label>
-              <input id="tStart" type="date" min={p.start} value={tStart} onChange={(e) => setTStart(e.target.value)} />
-            </div>
-            <div className="field">
-              <label htmlFor="tEnd">끝날</label>
-              <input id="tEnd" type="date" min={tStart || p.start} value={tEnd} onChange={(e) => setTEnd(e.target.value)} />
-            </div>
-          </div>
+          <div className="lbl">기간</div>
+          <RangePicker
+            start={tStart}
+            end={tEnd}
+            today={today}
+            onChange={(a, b) => {
+              setTStart(a);
+              setTEnd(b);
+            }}
+          />
           <div className="field">
             <label htmlFor="tBudget">여행 예산 (전체)</label>
             <MoneyInput id="tBudget" value={tBudget} onValue={setTBudget} placeholder="0" />

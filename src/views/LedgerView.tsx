@@ -10,7 +10,6 @@ export function LedgerView() {
   const { S, today, openDay } = useApp();
   const { days, weeks, view, dayByKey, L, cfg } = useModel();
   const nm = (k: string) => cfg.apptNames?.[k];
-  const cut = (x: string) => (x.length > 4 ? x.slice(0, 4) + "…" : x);
   const D = L; // 생활비 계산용
   const R = S.days; // 실제 기록
   const lim = days.reduce((s, d) => s + limitOf(D, d), 0);
@@ -34,20 +33,31 @@ export function LedgerView() {
     const t = info.trip;
     const s = t ? spentOf(R, k) : spentOf(D, k), l = limitOf(D, info), ns = isNoSpend(R, k);
     const over = t ? tripSpent(R, t) > t.budget : s > l;
-    const pos = t ? (k === t.start || k === view.start || info.wd === 1 ? " t-start" : "") + (k === t.end || k === view.end || info.wd === 0 ? " t-end" : "") : "";
-    const cls = "cell" + (over ? " over" : "") + (k === today ? " today" : "") + (ns ? " nospend" : "") + (info.tag === "약속" ? " appt" : "") + (t ? " trip" + pos : "");
+    const isAppt = info.tag === "약속";
+    const tStart = !!t && (k === t.start || k === view.start || info.wd === 1);
+    const tEnd = !!t && (k === t.end || k === view.end || info.wd === 0);
+    const cls = "cell" + (over && !t ? " over" : "") + (k === today ? " today" : "") + (ns ? " nospend" : "") + (info.wd === 6 ? " sat" : info.wd === 0 ? " sun" : "");
     cells.push(
       <button
         key={k}
         className={cls}
         aria-label={
-          md(d) + (t ? " " + t.name + ", 쓴 돈 " + won(s) + (over ? ", 여행 예산 초과" : "") : (info.tag === "약속" ? " " + (nm(k) || "약속") : "") + " 한도 " + won(l) + ", 쓴 돈 " + won(s) + (ns ? ", 무지출" : "") + (over ? ", 한도 초과" : ""))
+          md(d) + (t ? " " + t.name + ", 쓴 돈 " + won(s) + (over ? ", 여행 예산 초과" : "") : (isAppt ? " " + (nm(k) || "약속") : "") + " 한도 " + won(l) + ", 쓴 돈 " + won(s) + (ns ? ", 무지출" : "") + (over ? ", 한도 초과" : ""))
         }
         aria-current={k === today ? "date" : undefined}
         onClick={() => openDay(info.key)}
       >
         <span className="n">{label}</span>
-        <span className={"s" + (s || ns ? "" : " zero")}>{s ? "-" + short(s) : ns ? "무지출" : t ? (k === t.start || k === view.start ? cut(t.name) : "·") : info.tag === "약속" && nm(k) ? cut(nm(k)!) : short(l)}</span>
+        <span className={"s" + (s || ns ? "" : " zero")}>{s ? "-" + short(s) : ns ? "무지출" : t ? "" : short(l)}</span>
+        {t ? (
+          <span className={"ev trip" + (tStart ? " t-start" : "") + (tEnd ? " t-end" : "") + (over ? " over" : "")} aria-hidden="true">
+            {tStart ? t.name : "\u00a0"}
+          </span>
+        ) : isAppt ? (
+          <span className="ev appt" aria-hidden="true">
+            {nm(k) || "약속"}
+          </span>
+        ) : null}
       </button>,
     );
   }
@@ -64,7 +74,7 @@ export function LedgerView() {
         </div>
         <div className="cal">
           {["월", "화", "수", "목", "금", "토", "일"].map((t, i) => (
-            <div key={t} className={"dw" + (i === 6 ? " sun" : "")} aria-hidden="true">
+            <div key={t} className={"dw" + (i === 6 ? " sun" : i === 5 ? " sat" : "")} aria-hidden="true">
               {t}
             </div>
           ))}

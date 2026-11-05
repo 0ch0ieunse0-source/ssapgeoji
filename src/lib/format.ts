@@ -6,3 +6,9 @@ export const parse = (s: unknown) => parseInt(String(s ?? "").replace(/[^0-9]/g,
 /** 입력칸에 보여줄 금액 (0이면 빈칸) */
 export const fmt = (n: number | null | undefined) => (n ? Number(n).toLocaleString("ko-KR") : "");
 export const uid6 = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+/** 받침에 맞는 조사: eulReul("대구") → "대구를", eulReul("부산 여행") → "부산 여행을" */
+export function eulReul(word: string) {
+  const c = word.trim().charCodeAt(word.trim().length - 1);
+  const batchim = c >= 0xac00 && c <= 0xd7a3 ? (c - 0xac00) % 28 !== 0 : false;
+  return word + (batchim ? "을" : "를");
+}

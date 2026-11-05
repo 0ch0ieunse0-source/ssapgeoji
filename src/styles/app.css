@@ -421,16 +421,64 @@ body { padding-top: calc(18px + env(safe-area-inset-top, 0px)); }
 /* 추가: 여행 */
 .trip-box { display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--line); padding-top: 12px; margin-top: 2px; }
 .trip-title { font-size: 14.5px; }
-.cell.trip { border-radius: 0; background: var(--accent-soft); }
-.cell.trip.t-start { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
-.cell.trip.t-end { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
-.cell.trip .s { color: var(--accent); }
-.cell.trip.over { background: var(--over-soft); }
-.cell.trip.over .s { color: var(--over); }
-.cell.trip:not(.out):hover { filter: brightness(.97); }
 .cal-legend .t-sw { background: var(--accent-soft); border: 1px solid var(--accent); }
 .trip-sum { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; background: var(--accent-soft); border-radius: 14px; padding: 10px 14px; font-size: 13.5px; }
 .trip-sum span:not(.trip-amt) { color: var(--muted); grid-column: 1; }
 .trip-sum .trip-amt { grid-column: 2; grid-row: 1 / 3; align-self: center; font-weight: 700; }
 .trip-sum.over { background: var(--over-soft); }
 .trip-sum.over .trip-amt { color: var(--over); }
+
+/* 추가: 달력 칸 — 토요일 파랑, 약속·여행 막대 */
+.cal .dw.sat { color: var(--c3); }
+.cell.sat .n { color: var(--c3); }
+.cell.sun .n { color: var(--over); }
+.cell.today.sat .n, .cell.today.sun .n { color: var(--surface); }
+.cell { min-height: 74px; justify-content: flex-start; }
+.cell .ev { align-self: stretch; font-size: 10px; font-weight: 600; line-height: 1; padding: 3px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left; margin-top: auto; }
+.cell .ev.appt { background: color-mix(in srgb, var(--c4) 16%, var(--surface)); color: var(--c4); border-left: 2px solid var(--c4); border-radius: 4px; }
+.cell .ev.trip { background: var(--accent-soft); color: var(--accent); margin-left: -3px; margin-right: -3px; padding-left: 7px; border-radius: 0; overflow: visible; position: relative; z-index: 1; }
+.cell .ev.trip.t-start { z-index: 2; margin-left: 2px; padding-left: 5px; border-radius: 4px 0 0 4px; border-left: 2px solid var(--accent); }
+.cell .ev.trip.t-end { margin-right: 2px; border-radius: 0 4px 4px 0; }
+.cell .ev.trip.t-start.t-end { border-radius: 4px; }
+.cell .ev.trip.over { background: var(--over-soft); color: var(--over); border-left-color: var(--over); }
+.cell.appt .n { box-shadow: none; }
+
+/* 추가: 그날 카드 (달력 가운데) */
+.scrim.center { align-items: center; padding: 20px max(16px, env(safe-area-inset-right, 0px)) calc(20px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.sheet.pop { max-width: 380px; max-height: min(82vh, 680px); border-radius: 24px; padding: 18px; gap: 12px; animation: pop .2s ease-out; box-shadow: 0 16px 48px rgba(0,0,0,.25); }
+.dc-head { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px; align-items: start; }
+.dc-head h2 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
+.dc-sub { font-size: 12.5px; color: var(--muted); }
+.dc-sub.appt { color: var(--c4); font-weight: 600; }
+.dc-sub.trip { color: var(--accent); font-weight: 600; }
+.dc-head .x { font-size: 15px; }
+.dc-sum { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; background: var(--surface-2); border-radius: 12px; padding: 10px 12px; font-size: 14px; font-weight: 600; }
+.dc-more { display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 10px 0; }
+.evlist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.evlist li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; background: var(--surface-2); border-left: 4px solid var(--c7); border-radius: 10px; padding: 10px 12px; }
+.evlist .t { display: flex; flex-direction: column; min-width: 0; }
+.evlist .t b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.evlist .t span { font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.evlist .a { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.evlist .a b { font-weight: 700; }
+.dc-empty { margin: 4px 0; text-align: center; color: var(--muted); font-size: 14px; }
+.dc-add { border: 1.5px dashed var(--line); background: transparent; border-radius: 12px; min-height: 48px; color: var(--muted); font-size: 14.5px; cursor: pointer; text-align: left; padding: 0 14px; }
+.dc-add:hover { border-color: var(--accent); color: var(--accent); }
+
+/* 추가: 기간 고르기 */
+.rp { display: flex; flex-direction: column; gap: 8px; }
+.rp-head { display: flex; justify-content: space-between; align-items: center; }
+.rp-head span { display: flex; gap: 6px; }
+.rp-head .pbtn { width: 36px; height: 36px; }
+.rp-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); row-gap: 4px; }
+.rp-dw { font-size: 12px; color: var(--muted); text-align: center; padding-bottom: 4px; }
+.rp-dw.sat, .rp-day.sat span { color: var(--c3); }
+.rp-dw.sun, .rp-day.sun span { color: var(--over); }
+.rp-day { border: none; background: transparent; height: 40px; padding: 0; cursor: pointer; display: grid; place-items: center; position: relative; }
+.rp-day span { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-size: 14px; position: relative; z-index: 1; }
+.rp-day.now span { box-shadow: inset 0 0 0 1.5px var(--line); }
+.rp-day.in { background: var(--accent-soft); }
+.rp-day.edge.s { background: linear-gradient(90deg, transparent 50%, var(--accent-soft) 50%); }
+.rp-day.edge.e { background: linear-gradient(90deg, var(--accent-soft) 50%, transparent 50%); }
+.rp-day.s span, .rp-day.e span { background: var(--accent); color: var(--surface) !important; font-weight: 700; }
+.rp-sum { margin: 0; }

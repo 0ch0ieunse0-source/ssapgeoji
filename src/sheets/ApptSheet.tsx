@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { MoneyInput } from "../components/common";
+import { RangePicker } from "../components/RangePicker";
 import { Sheet, SheetHead } from "../components/Sheet";
 import { dOf, DOW, md } from "../lib/date";
-import { fmt, parse, uid6, won } from "../lib/format";
+import { eulReul, fmt, parse, uid6, won } from "../lib/format";
 import { periodsTouching, resplitPlans } from "../lib/period";
 import { tripLength, tripsOverlap, type Trip, type TripFund } from "../lib/trip";
 import type { Key } from "../lib/types";
@@ -12,7 +13,7 @@ export type ApptTarget = { day: Key; mode: "new" | "appt" | "trip"; trip?: Trip 
 
 /** 달력에서 약속·여행 추가·수정 */
 export function ApptSheet({ target, onClose }: { target: ApptTarget; onClose: () => void }) {
-  const { update, toast } = useApp();
+  const { update, toast, today } = useApp();
   const { cfg, plan } = useModel();
   const [kind, setKind] = useState<"appt" | "trip">("appt");
   const [name, setName] = useState("");
@@ -96,7 +97,7 @@ export function ApptSheet({ target, onClose }: { target: ApptTarget; onClose: ()
       from,
       to,
     );
-    toast(target.trip ? "여행을 바꿨어요." : t.name + "을 추가했어요. 그 기간은 여행 예산 안에서 써요.");
+    toast(target.trip ? "여행을 바꿨어요." : eulReul(t.name) + " 추가했어요. 그 기간은 여행 예산 안에서 써요.");
     onClose();
   };
   const removeTrip = () => {
@@ -148,16 +149,16 @@ export function ApptSheet({ target, onClose }: { target: ApptTarget; onClose: ()
             <label htmlFor="apTName">여행 이름</label>
             <input id="apTName" maxLength={14} placeholder="예: 부산 여행" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
-          <div className="row">
-            <div className="field">
-              <label htmlFor="apStart">시작일</label>
-              <input id="apStart" type="date" value={start} onChange={(e) => setStart(e.target.value)} />
-            </div>
-            <div className="field">
-              <label htmlFor="apEnd">끝날</label>
-              <input id="apEnd" type="date" min={start} value={end} onChange={(e) => setEnd(e.target.value)} />
-            </div>
-          </div>
+          <div className="lbl">기간</div>
+          <RangePicker
+            start={start}
+            end={end}
+            today={today}
+            onChange={(a, b) => {
+              setStart(a);
+              setEnd(b);
+            }}
+          />
           <div className="field">
             <label htmlFor="apBudget">여행 예산 (전체)</label>
             <MoneyInput id="apBudget" value={budget} onValue={setBudget} placeholder="0" />

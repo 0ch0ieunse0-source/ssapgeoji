@@ -10,12 +10,15 @@ export function Sheet({
   labelledBy,
   children,
   autoFocus = true,
+  center = false,
 }: {
   open: boolean;
   onClose: () => void;
   labelledBy: string;
   children: ReactNode;
   autoFocus?: boolean;
+  /** 화면 가운데 카드로 띄우기 (달력의 그날 카드) */
+  center?: boolean;
 }) {
   const ref = useRef<HTMLElement>(null);
   const lastFocus = useRef<HTMLElement | null>(null);
@@ -57,9 +60,9 @@ export function Sheet({
   }, [open, onClose]);
 
   return (
-    <div className="scrim" hidden={!open} onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <section className="sheet" role="dialog" aria-modal="true" aria-labelledby={labelledBy} ref={ref} tabIndex={-1}>
-        <div className="grab" />
+    <div className={"scrim" + (center ? " center" : "")} hidden={!open} onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <section className={"sheet" + (center ? " pop" : "")} role="dialog" aria-modal="true" aria-labelledby={labelledBy} ref={ref} tabIndex={-1}>
+        {!center && <div className="grab" />}
         {children}
       </section>
     </div>
