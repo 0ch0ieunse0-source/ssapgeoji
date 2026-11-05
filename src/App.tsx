@@ -11,6 +11,7 @@ import { GoalView } from "./views/GoalView";
 import { HomeView } from "./views/HomeView";
 import { LedgerView } from "./views/LedgerView";
 import { NoticeView } from "./views/NoticeView";
+import { BoardView } from "./views/BoardView";
 import { SaveView } from "./views/SaveView";
 import { SetupView } from "./views/SetupView";
 
@@ -26,7 +27,7 @@ function Shell() {
   return (
     <>
       <div className="app">
-        {route !== "notice" && <TopBar />}
+        {route !== "notice" && route !== "board" && <TopBar />}
         <Banner />
         {model && (route === "home" || route === "ledger" || route === "save") && <PeriodNav />}
         <main style={{ display: "contents" }}>
@@ -37,6 +38,7 @@ function Shell() {
           {model && route === "flow" && <FlowView />}
           {model && route === "goal" && <GoalView />}
           {model && route === "notice" && <NoticeView key={sub} id={sub} />}
+          {model && route === "board" && <BoardView />}
         </main>
         {!model && <footer>기록은 이 기기의 브라우저에만 저장되고 다른 사람은 볼 수 없어요. 설정에서 백업 파일을 저장해 두면 다른 기기로 옮길 수 있어요.</footer>}
       </div>

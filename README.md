@@ -81,3 +81,14 @@ src/
   styles/       tokens.css(색·글꼴 디자인 토큰, 라이트·다크) + app.css
 public/         manifest.json, 앱 아이콘
 ```
+
+## 기능 제안 게시판 (베타) 연결하기
+
+게시판 글은 구글 시트에 모여요. 가계부 기록과는 따로예요.
+
+1. [sheets.new](https://sheets.new)에서 새 시트를 만들어요.
+2. **확장 프로그램 → Apps Script**를 열고, `board/apps-script.gs` 내용을 전부 붙여 넣고 저장해요.
+3. **배포 → 새 배포 → 유형: 웹 앱**, 실행: **나**, 액세스: **모든 사용자** → 배포 → 권한 허용
+4. 나오는 웹 앱 주소(`https://script.google.com/macros/s/…/exec`)를 `src/board.ts`의 `BOARD_URL`에 넣고 배포해요.
+
+글을 지우려면 시트에서 그 줄을 삭제하면 돼요.
