@@ -33,6 +33,8 @@ export interface EntryPreset {
   amount?: number;
   memo?: string;
   cat?: string;
+  /** 정산하기로 열기: 친구 몫 나누기와 정산 메시지를 펼친 채로 */
+  settle?: boolean;
 }
 interface EntryState {
   open: boolean;

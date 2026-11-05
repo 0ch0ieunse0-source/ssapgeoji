@@ -230,7 +230,12 @@ export function HomeView() {
       <section className="card" id="oweCard" aria-label="친구한테 받을 돈">
         <div className="card-head">
           <h2>친구한테 받을 돈</h2>
-          <b>{won(oweSum)}</b>
+          <span className="head-r">
+            <b>{won(oweSum)}</b>
+            <button className="link" onClick={() => openEntry(today, { settle: true })}>
+              정산하기
+            </button>
+          </span>
         </div>
         <ul className="tx">
           {owes.map(({ it, key }) => (

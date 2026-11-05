@@ -29,12 +29,16 @@ export function EntrySheet() {
   const [names, setNames] = useState<string[]>([]);
   const [attend, setAttend] = useState<boolean[][]>([]);
   const amtRef = useRef<HTMLInputElement>(null);
+  const [settleMode, setSettleMode] = useState(false);
 
   useEffect(() => {
     if (!entry.nonce) return;
     setDayK(entry.day);
     const pre = entry.pre;
-    if (pre) {
+    if (pre?.settle) setSplitOn(true);
+    else if (settleMode) setSplitOn(false); // 정산하기로 열었다가 저장 안 하고 닫았으면 원래대로
+    setSettleMode(!!pre?.settle);
+    if (pre && !pre.settle) {
       setAmount(pre.amount ? pre.amount.toLocaleString("ko-KR") : "");
       setMemo(pre.memo || "");
       if (pre.cat) setCat(pre.cat);
@@ -97,7 +101,8 @@ export function EntrySheet() {
 
   return (
     <Sheet open={entry.open} onClose={closeEntry} labelledBy="entryTitle" autoFocus={false}>
-      <SheetHead id="entryTitle" title={(day === today ? "오늘" : md(dOf(day))) + " 쓴 돈 적기"} onClose={closeEntry} />
+      <SheetHead id="entryTitle" title={settleMode ? "정산하기 · " + (day === today ? "오늘" : md(dOf(day))) : (day === today ? "오늘" : md(dOf(day))) + " 쓴 돈 적기"} onClose={closeEntry} />
+      {settleMode && <p className="hint">함께 낸 금액을 적으면 내 몫만 생활비에서 빠지고, 나머지는 받을 돈으로 적혀요.</p>}
       <div className="amount-wrap">
         <MoneyInput id="amount" ref={amtRef} className="" autoComplete="off" placeholder="0" aria-label="금액" value={byRounds ? fmt(rs.total) : amount} onValue={setAmount} onKeyDown={onEnter} readOnly={byRounds} aria-readonly={byRounds} />
         <span aria-hidden="true">원</span>
@@ -223,6 +228,8 @@ export function EntrySheet() {
           </p>
           {(
             <SettlePanel
+              key={entry.nonce}
+              defaultOpen={settleMode}
               input={{
                 title: memo.trim() || cat,
                 date: day,

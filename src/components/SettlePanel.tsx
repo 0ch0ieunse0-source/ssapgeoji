@@ -70,19 +70,21 @@ export function AccountFields({ onChange, idp = "ac" }: { onChange?: () => void;
 
 /** 정산 메시지 만들기 (베타) — 쓴 돈 적기 시트 안, 누를 때만 펼쳐져요 */
 export function SettlePanel({
+  defaultOpen = false,
   input,
   names,
   setNames,
   attend,
   setAttend,
 }: {
+  defaultOpen?: boolean;
   input: Omit<SettleInput, "names" | "attend" | "account">;
   names: string[];
   setNames: (v: string[]) => void;
   attend: boolean[][];
   setAttend: (v: boolean[][]) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const [nameIn, setNameIn] = useState("");
   const [, bump] = useState(0);
   const roundsN = input.rounds.length > 1 ? input.rounds.length : 0;

@@ -517,3 +517,6 @@ html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adj
 .cell.pre .n { opacity: .55; }
 .pre-box { display: flex; flex-direction: column; gap: 8px; }
 .pre-box .lbl { margin-bottom: -2px; }
+
+/* 추가: 카드 머리 오른쪽 (금액 + 작은 버튼) */
+.card-head .head-r { display: inline-flex; align-items: baseline; gap: 10px; }
