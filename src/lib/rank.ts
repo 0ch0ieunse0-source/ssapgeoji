@@ -109,3 +109,30 @@ export function rankRows(rows: RankRow[], season: Key): RankedRow[] {
   rows.filter((r) => r.season !== season).forEach((r) => out.push({ ...r, rank: null, state: "pending" }));
   return out;
 }
+
+/** 등급별 한마디 */
+export const GRADE_LINE: Record<Grade, string> = {
+  꽃거지: "통장을 지켜낸 진정한 거지",
+  알뜰거지: "조금만 더 하면 꽃거지",
+  보통거지: "평범하게 아끼는 중",
+  흔들거지: "지갑이 흔들리고 있어요",
+  핵거지: "지갑이 울고 있어요",
+};
+export const lineOf = (grade: string | null, broke: boolean) => (broke ? "파산 선고!" : GRADE_LINE[grade as Grade] || "");
+
+export interface Reveal {
+  top: RankedRow[]; // 1등 (같은 퍼센트면 여러 명)
+  me: RankedRow | null; // 순위에 든 나
+  total: number; // 순위에 든 사람 수
+  last: RankedRow | null; // 꼴찌 (순위에 든 사람이 3명 이상이고 1등이 아닐 때)
+}
+/** 발표 연출에 보여줄 것. 보여줄 게 없으면 null */
+export function buildReveal(rows: RankedRow[], myCode: string): Reveal | null {
+  const ranked = rows.filter((r) => r.state === "ranked");
+  if (!ranked.length) return null;
+  const top = ranked.filter((r) => r.rank === 1);
+  const me = ranked.find((r) => r.code === myCode) || null;
+  const lastRank = ranked[ranked.length - 1].rank;
+  const last = ranked.length >= 3 && lastRank !== 1 ? ranked.filter((r) => r.rank === lastRank).find((r) => r.code === myCode) || ranked[ranked.length - 1] : null;
+  return { top, me, total: ranked.length, last };
+}

@@ -70,3 +70,15 @@ export async function deleteProfile(r: RankLocal) {
   await rpc("geoji_delete", { p_code: r.code, p_secret: r.secret });
   saveRank(null);
 }
+
+export type PokeKind = "cheer" | "poke";
+export interface InboxItem {
+  from_nickname: string;
+  kind: PokeKind;
+  created_at: string;
+}
+/** 응원·콕 보내기 — 친구 코드와 종류만 보내요. "ok" 또는 "already"(오늘 이미 보냄) */
+export const sendPoke = (r: RankLocal, to: string, kind: PokeKind) =>
+  rpc<string>("geoji_poke", { p_code: r.code, p_secret: r.secret, p_to: to, p_kind: kind });
+/** 받은 응원·콕 (읽음 처리돼요) */
+export const fetchInbox = (r: RankLocal) => rpc<InboxItem[]>("geoji_inbox", { p_code: r.code, p_secret: r.secret });

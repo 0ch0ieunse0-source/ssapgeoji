@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { announcedSeason, buildScorePayload, gradeOf, nextAnnounce, normalizeCode, rankRows, scoreFor, seasonOf } from "./rank";
+import { announcedSeason, buildReveal, buildScorePayload, lineOf, gradeOf, nextAnnounce, normalizeCode, rankRows, scoreFor, seasonOf } from "./rank";
 import { dataWith, item, makeCfg } from "./testUtils";
 
 describe("2주 시즌", () => {
@@ -94,5 +94,49 @@ describe("순위", () => {
     expect(out.map((x) => [x.code, x.rank, x.state])).toEqual([
       ["b", 1, "ranked"], ["d", 1, "ranked"], ["a", 3, "ranked"], ["f", 4, "ranked"], ["c", null, "nolog"], ["e", null, "pending"],
     ]);
+  });
+});
+
+describe("발표 연출", () => {
+  const S = "2026-11-02";
+  const r = (code: string, pct: number | null, broke = false) => ({ code, nickname: code, season: S, pct, grade: pct == null ? null : gradeOf(pct), broke });
+  it("1등, 나, 꼴찌", () => {
+    const v = buildReveal(rankRows([r("a", 94), r("me", 78), r("b", 61), r("c", 22, true)], S), "me")!;
+    expect(v.top.map((x) => x.code)).toEqual(["a"]);
+    expect([v.me?.rank, v.total, v.last?.code]).toEqual([2, 4, "c"]);
+  });
+  it("공동 1등, 두 명이면 꼴찌 없음", () => {
+    const v = buildReveal(rankRows([r("a", 90), r("me", 90)], S), "me")!;
+    expect(v.top.map((x) => x.code).sort()).toEqual(["a", "me"]);
+    expect(v.last).toBeNull();
+  });
+  it("공동 꼴찌에 내가 있으면 나를 놀려요", () => {
+    const v = buildReveal(rankRows([r("a", 90), r("b", 20), r("me", 20)], S), "me")!;
+    expect(v.last?.code).toBe("me");
+  });
+  it("순위에 든 사람이 없으면 연출 없음", () => {
+    expect(buildReveal(rankRows([r("me", null)], S), "me")).toBeNull();
+  });
+  it("한마디", () => {
+    expect(lineOf("꽃거지", false)).toBe("통장을 지켜낸 진정한 거지");
+    expect(lineOf("핵거지", true)).toBe("파산 선고!");
+  });
+});
+
+describe("응원·콕도 금액 없이", () => {
+  it("보내는 값은 코드·비밀 열쇠·받는 사람·종류뿐", async () => {
+    const calls: unknown[] = [];
+    const orig = globalThis.fetch;
+    globalThis.fetch = (async (_u: string, init: { body: string }) => {
+      calls.push(JSON.parse(init.body));
+      return { ok: true, text: async () => '"ok"' };
+    }) as unknown as typeof fetch;
+    try {
+      const { sendPoke } = await import("../state/rank");
+      await sendPoke({ code: "GEOJI-ABCDEF", secret: "s", nickname: "n", friends: [], submitted: null }, "GEOJI-BCDEFG", "cheer");
+    } finally {
+      globalThis.fetch = orig;
+    }
+    expect(Object.keys(calls[0] as object).sort()).toEqual(["p_code", "p_kind", "p_secret", "p_to"]);
   });
 });

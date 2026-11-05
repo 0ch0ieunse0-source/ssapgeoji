@@ -4,7 +4,7 @@ import { Sheet, SheetHead } from "../components/Sheet";
 import { md, sd, dOf } from "../lib/date";
 import { nextAnnounce, normalizeCode, type RankedRow } from "../lib/rank";
 import { useApp } from "../state/app";
-import { createProfile, deleteProfile, fetchRows, submitScore } from "../state/rank";
+import { createProfile, deleteProfile, fetchRows, sendPoke, submitScore, type PokeKind } from "../state/rank";
 import { useRank } from "../state/useRank";
 
 const MAX_FRIENDS = 30;
@@ -109,6 +109,17 @@ export function RankView() {
     } finally {
       setBusy(false);
       setLeaveArmed(false);
+    }
+  };
+
+  const poke = async (r: RankedRow, kind: PokeKind) => {
+    if (!local) return;
+    try {
+      const res = await sendPoke(local, r.code, kind);
+      if (res === "already") toast(kind === "cheer" ? "오늘은 이미 응원했어요. 내일 또 해주세요." : "오늘은 이미 콕 찔렀어요. 내일 또 찔러요.");
+      else toast(kind === "cheer" ? r.nickname + "님께 👏 응원을 보냈어요." : r.nickname + "님을 👉 콕 찔렀어요.");
+    } catch {
+      toast("보내지 못했어요. 잠시 뒤 다시 시도해 주세요.", true);
     }
   };
 
@@ -235,6 +246,16 @@ export function RankView() {
                       {r.code === local.code && <small> (나)</small>}
                     </b>
                     <span className={r.state === "ranked" ? "" : "k"}>{resultText(r)}</span>
+                    {r.code !== local.code && (
+                      <span className="pokes">
+                        <button className="chip" aria-label={r.nickname + "님 응원하기"} onClick={() => poke(r, "cheer")}>
+                          👏 응원
+                        </button>
+                        <button className="chip" aria-label={r.nickname + "님 콕 찌르기"} onClick={() => poke(r, "poke")}>
+                          👉 콕
+                        </button>
+                      </span>
+                    )}
                   </span>
                   <span className="ra">
                     {r.broke && r.state === "ranked" && <BrokeBadge />}

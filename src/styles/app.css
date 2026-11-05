@@ -365,3 +365,26 @@ body { padding-top: calc(18px + env(safe-area-inset-top, 0px)); }
 .privacy .pv.no { background: var(--good-soft); color: var(--ink); }
 .privacy .pv.no b { color: var(--good); }
 .privacy ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 13.5px; display: flex; flex-direction: column; gap: 4px; }
+
+/* 추가: 응원·콕, 결과 발표 연출 */
+.rank-list .pokes { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+.rank-list .pokes .chip { padding: 5px 11px; font-size: 12.5px; }
+.rank-list li { align-items: start; }
+.rank-list .rk, .rank-list .ra { padding-top: 2px; }
+.inbox .ico { font-size: 18px; }
+.reveal { position: fixed; inset: 0; z-index: 45; background: var(--scrim); display: grid; place-items: center; padding: 20px max(16px, env(safe-area-inset-right, 0px)) calc(20px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); overflow-y: auto; }
+.reveal-card { --surface: #ffffff; --surface-2: #eceef1; --ink: #18201c; --muted: #59635d; --line: #e3e5e9; --accent: var(--accent-l); --accent-soft: var(--accent-soft-l); color: var(--ink); color-scheme: light;
+  position: relative; z-index: 1; background: #ffffff; border-radius: 24px; width: 100%; max-width: 360px; padding: 24px 20px 20px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; box-shadow: 0 12px 40px rgba(0,0,0,.25); animation: pop .28s ease-out; }
+.reveal-card img { width: 120px; height: auto; }
+.reveal-card h2 { margin: 0; font-size: 20px; letter-spacing: -0.02em; }
+.reveal-card .btn { width: 100%; }
+.reveal-card .row { width: 100%; margin-top: 4px; }
+.reveal-card .rv { width: 100%; display: flex; flex-direction: column; gap: 2px; padding: 12px 0; border-top: 1px solid var(--line); }
+.reveal-card .rv.top { border-top: none; padding-top: 0; }
+.reveal-card .rv-big { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; color: var(--accent); }
+.reveal-card .rv.last b { color: #d03c30; }
+@keyframes pop { from { transform: scale(.92); opacity: 0; } to { transform: none; opacity: 1; } }
+.confetti { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 2; }
+.confetti i { position: absolute; top: -12px; width: 8px; height: 13px; border-radius: 2px; animation: fall linear forwards; }
+@keyframes fall { to { transform: translateY(110vh) rotate(540deg); opacity: .9; } }
+@media (prefers-reduced-motion: reduce) { .confetti { display: none; } }
