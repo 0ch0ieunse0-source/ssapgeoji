@@ -50,7 +50,7 @@ export function scoreFor(data: Data, cfg: Settings, season: Period): SeasonScore
   const cache = new Map<Key, DayInfo[]>();
   const infoOf = (k: Key): DayInfo => {
     const p = periodOf(k, cfg.cycleDay);
-    if (!cache.has(p.start)) cache.set(p.start, daysFor(p, planFor(data.periods, cfg, p), cfg.appts, cfg.trips));
+    if (!cache.has(p.start)) cache.set(p.start, daysFor(p, planFor(data.periods, cfg, p), cfg.appts, cfg.trips, cfg.joinDate));
     return cache.get(p.start)!.find((d) => d.key === k)!;
   };
   const L = livingMap(data.days, cfg.trips);

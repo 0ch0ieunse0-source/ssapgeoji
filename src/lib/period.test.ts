@@ -136,3 +136,23 @@ describe("makePlan / daysFor / weeksOf", () => {
     expect(weeks[1][0].key).toBe("2026-11-02");
   });
 });
+
+describe("처음 쓰기 전 날", () => {
+  const p = periodOf("2026-11-05", 1);
+  it("처음 쓴 날 이전은 날 수에서 빠지고, 생활비를 남은 날에 나눠요", () => {
+    // 11/16(월)부터 쓰기 시작: 11/16~30 = 평일 11, 주말 4
+    expect(countsFor(p, [], undefined, "2026-11-16")).toEqual({ wd: 11, we: 4, ap: 0, n: 15 });
+    // 400000*0.95 / (11 + 6) = 22352 → 22000
+    expect(splitFor(400000, 0, countsFor(p, [], undefined, "2026-11-16"))).toEqual({ weekday: 22000, weekend: 33000 });
+  });
+  it("이전 날은 한도 0", () => {
+    const plan = { total: 1, apptLimit: 30000, auto: false, weekday: 10000, weekend: 15000 };
+    const days = daysFor(p, plan, ["2026-11-03"], undefined, "2026-11-05");
+    expect(days.find((d) => d.key === "2026-11-03")).toMatchObject({ base: 0, pre: true });
+    expect(days.find((d) => d.key === "2026-11-05")).toMatchObject({ base: 10000 });
+    expect(days.filter((d) => d.pre)).toHaveLength(4);
+  });
+  it("처음 쓴 날이 없으면 그대로", () => {
+    expect(countsFor(p, [], undefined, null)).toEqual(countsFor(p, []));
+  });
+});

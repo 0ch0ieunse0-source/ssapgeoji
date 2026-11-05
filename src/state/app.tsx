@@ -4,7 +4,7 @@ import { hasNoticeRecord, markAllNoticesRead } from "../notices";
 import type { ApptTarget } from "../sheets/ApptSheet";
 import { kOf, startOfToday } from "../lib/date";
 import { getDay, setDay } from "../lib/ledger";
-import { daysFor, makePlan, periodOf, planFor, shiftPeriod, weeksOf, type DayInfo } from "../lib/period";
+import { daysFor, makePlan, periodOf, planFor, resplitPlans, shiftPeriod, weeksOf, type DayInfo } from "../lib/period";
 import { livingMap } from "../lib/trip";
 import { loadData, saveData } from "../lib/storage";
 import type { Data, DaysMap, Key, Period, Plan, Settings } from "../lib/types";
@@ -215,7 +215,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     let view = viewP;
     if (!view || view.start > shiftPeriod(cur, 1, cd).start) view = cur;
     const plan = planFor(S.periods, cfg, view);
-    const days = daysFor(view, plan, cfg.appts, cfg.trips);
+    const days = daysFor(view, plan, cfg.appts, cfg.trips, cfg.joinDate);
     const isCur = view.start === cur.start;
     return {
       cfg,
@@ -232,6 +232,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [S, viewP, today]);
 
   // 프로토타입처럼: 처음 시작한 달을 기억하고, 시작된 달의 한도 계획은 저장해 둬요 (나중에 설정을 바꿔도 지난 달은 그대로)
+  useEffect(() => {
+    const c = S.settings;
+    if (!c || c.joinDate) return;
+    const first = Object.keys(S.days)
+      .filter((k) => S.days[k]?.items?.length || S.days[k]?.noSpend)
+      .sort()[0];
+    const join = first && first < today ? first : today;
+    update((d) => {
+      if (!d.settings) return;
+      d.settings.joinDate = join;
+      resplitPlans(d.periods, d.settings, [periodOf(join, d.settings.cycleDay)]);
+    });
+  }, [S.settings, S.days, today, update]);
+
   useEffect(() => {
     if (!model) return;
     const missing = [model.cur, model.view].filter((p, i, a) => a.findIndex((x) => x.start === p.start) === i && !S.periods[p.start] && p.start <= today);

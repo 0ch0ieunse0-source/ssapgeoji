@@ -45,7 +45,7 @@ export function EntrySheet() {
 
   if (!model) return null;
   const { cfg, cur, view } = model;
-  const entryMin = cfg.firstStart || cur.start;
+  const entryMin = [cfg.firstStart || cur.start, cfg.joinDate || ""].sort().pop()!;
   const byRounds = splitOn && splitMode === "rounds";
   const rs = splitRounds(rounds.map((r) => ({ amount: parse(r.amount), people: parseInt(r.people, 10) || 1 })));
   // 차수별이면 위쪽 금액 = 차수 합계
@@ -76,7 +76,7 @@ export function EntrySheet() {
     closeEntry();
     const p = periodOf(k, cfg.cycleDay);
     if (p.start !== view.start) setView(p);
-    const dd = daysFor(p, planFor(S.periods, cfg, p), cfg.appts, cfg.trips).find((x) => x.key === k)!;
+    const dd = daysFor(p, planFor(S.periods, cfg, p), cfg.appts, cfg.trips, cfg.joinDate).find((x) => x.key === k)!;
     const oweNote = splitOn && n > mine ? " 받을 돈 " + won(n - mine) + "은 지금 송금 요청하세요." : "";
     if (dd.trip) {
       const tl = dd.trip.budget - (tripSpent(S.days, dd.trip) + mine);

@@ -511,3 +511,7 @@ body { padding-top: calc(18px + env(safe-area-inset-top, 0px)); }
 }
 /* 버튼을 빨리 두 번 눌렀을 때 확대되지 않게 (두 손가락 확대는 그대로 돼요) */
 html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+/* 추가: 처음 쓰기 전 날 (한도 0) */
+.cell.pre .s { color: var(--muted); font-weight: 400; }
+.cell.pre .n { opacity: .55; }

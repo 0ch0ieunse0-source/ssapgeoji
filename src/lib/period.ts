@@ -29,10 +29,11 @@ export interface Counts {
  * 기간 안의 평일·주말·약속 날 수 (약속 날은 평일·주말에서 빠져요).
  * 여행 중 '생활비 안에서' 날은 따로 세고, '따로 모아 둔 돈' 날은 평소처럼 세요 (다른 날 한도가 그대로이게).
  */
-export function countsFor(p: Period, appts: Key[] | undefined, trips?: Trip[]): Counts {
+export function countsFor(p: Period, appts: Key[] | undefined, trips?: Trip[], join?: Key | null): Counts {
   const set = new Set(appts || []);
   let wd = 0, we = 0, ap = 0, td = 0, trip = 0;
   for (let k = p.start; k <= p.end; k = addDays(k, 1)) {
+    if (join && k < join && !tripOn(trips, k)) continue; // 처음 쓰기 전 날은 나누지 않아요
     const t = tripOn(trips, k);
     if (t && t.fund === "living") {
       td++;
@@ -64,7 +65,7 @@ export function makePlan(cfg: Settings, p: Period): Plan {
     weekday: cfg.weekday,
     weekend: cfg.weekend,
   };
-  if (cfg.autoLimits) Object.assign(plan, splitFor(plan.total, plan.apptLimit, countsFor(p, cfg.appts, cfg.trips)));
+  if (cfg.autoLimits) Object.assign(plan, splitFor(plan.total, plan.apptLimit, countsFor(p, cfg.appts, cfg.trips, cfg.joinDate)));
   return plan;
 }
 
@@ -79,9 +80,10 @@ export interface DayInfo {
   base: number; // 기본 한도 (여행 날은 생활비 계산용 몫)
   tag: "" | "주말" | "약속" | "여행";
   trip?: Trip; // 여행 날이면 그 여행
+  pre?: boolean; // 처음 쓰기 전 날 (한도 0)
 }
 
-export function daysFor(p: Period, plan: Plan, appts: Key[] | undefined, trips?: Trip[]): DayInfo[] {
+export function daysFor(p: Period, plan: Plan, appts: Key[] | undefined, trips?: Trip[], join?: Key | null): DayInfo[] {
   const appt = new Set(appts || []);
   const out: DayInfo[] = [];
   for (let k = p.start; k <= p.end; k = addDays(k, 1)) {
@@ -89,6 +91,10 @@ export function daysFor(p: Period, plan: Plan, appts: Key[] | undefined, trips?:
     const t = tripOn(trips, k);
     if (t) {
       out.push({ key: k, date: d, wd, base: tripAlloc(t, k), tag: "여행", trip: t });
+      continue;
+    }
+    if (join && k < join) {
+      out.push({ key: k, date: d, wd, base: 0, tag: we ? "주말" : "", pre: true });
       continue;
     }
     let base = we ? plan.weekend : plan.weekday;
@@ -124,6 +130,6 @@ export function periodsTouching(start: Key, end: Key, cycleDay: number): Period[
 export function resplitPlans(periods: Record<Key, Plan>, cfg: Settings, ps: Period[]) {
   ps.forEach((p) => {
     const pl = periods[p.start];
-    if (pl && pl.auto) Object.assign(pl, splitFor(pl.total, pl.apptLimit, countsFor(p, cfg.appts, cfg.trips)));
+    if (pl && pl.auto) Object.assign(pl, splitFor(pl.total, pl.apptLimit, countsFor(p, cfg.appts, cfg.trips, cfg.joinDate)));
   });
 }

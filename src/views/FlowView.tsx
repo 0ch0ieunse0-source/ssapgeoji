@@ -51,7 +51,7 @@ export function FlowView() {
       </div>
     );
 
-  const curDays = daysFor(cur, planFor(S.periods, cfg, cur), cfg.appts, cfg.trips);
+  const curDays = daysFor(cur, planFor(S.periods, cfg, cur), cfg.appts, cfg.trips, cfg.joinDate);
   const { rows, lastBal, minBal, minAt, last, low } = computeFlow(S, cfg, cur, curDays, today);
 
   const patchFlow = (it: FlowItem, patch: FlowOver) =>

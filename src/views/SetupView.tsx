@@ -61,7 +61,7 @@ export function SetupView({ section = "" }: { section?: string }) {
 
   // 미리 보기
   const p = periodOf(today, cycle), nx = shiftPeriod(p, 1, cycle);
-  const counts = countsFor(p, appts, trips);
+  const counts = countsFor(p, appts, trips, cfg?.joinDate || today);
   const totalN = parse(total), apl = parse(apptLimit);
   const split = auto && totalN ? splitFor(totalN, apl, counts) : null;
   const shownWd = split ? fmt(split.weekday) : weekday;
@@ -156,6 +156,7 @@ export function SetupView({ section = "" }: { section?: string }) {
         goalDate: goalDateV,
         firstStart: prev && prev.cycleDay === cycle ? prev.firstStart : null,
         accent,
+        joinDate: prev?.joinDate || today,
       };
       // 이번 달부터는 새 설정으로 다시 나누기 (지난 달 계획은 그대로)
       Object.keys(d.periods).forEach((k) => {

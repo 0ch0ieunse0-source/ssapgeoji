@@ -73,7 +73,7 @@ export function LedgerView() {
     const isAppt = info.tag === "약속";
     const tStart = !!t && (k === t.start || k === view.start || info.wd === 1);
     const tEnd = !!t && (k === t.end || k === view.end || info.wd === 0);
-    const cls = "cell" + (over && !t ? " over" : "") + (k === today ? " today" : "") + (ns ? " nospend" : "") + (info.wd === 6 ? " sat" : info.wd === 0 ? " sun" : "");
+    const cls = "cell" + (over && !t ? " over" : "") + (k === today ? " today" : "") + (ns ? " nospend" : "") + (info.wd === 6 ? " sat" : info.wd === 0 ? " sun" : "") + (info.pre ? " pre" : "");
     cells.push(
       <button
         key={k}
