@@ -109,7 +109,8 @@ export function useModel() {
 const readHash = () => (typeof location === "undefined" ? "" : location.hash.slice(1));
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [now] = useState(startOfToday);
+  // 오늘 날짜. 앱을 켜 둔 채 자정이 지나도 다음 날로 넘어가도록 다시 확인해요.
+  const [now, setNow] = useState(startOfToday);
   const today = kOf(now);
   const [init] = useState(() => loadData(today));
   const [S, setS] = useState<Data>(init.data);
@@ -154,9 +155,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const f = () => setHash(readHash());
     window.addEventListener("hashchange", f);
-    const iv = window.setInterval(() => setTick((t) => t + 1), 60000);
+    // 홈 화면 앱은 새로고침 없이 다시 열리는 일이 많아서, 다시 볼 때와 1분마다 날짜가 바뀌었는지 확인해요
+    const checkDay = () => {
+      const n = startOfToday();
+      setNow((prev) => (prev.getTime() === n.getTime() ? prev : n));
+    };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") checkDay();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", checkDay);
+    window.addEventListener("pageshow", checkDay);
+    const iv = window.setInterval(() => {
+      checkDay();
+      setTick((t) => t + 1);
+    }, 60000);
     return () => {
       window.removeEventListener("hashchange", f);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", checkDay);
+      window.removeEventListener("pageshow", checkDay);
       window.clearInterval(iv);
     };
   }, []);
