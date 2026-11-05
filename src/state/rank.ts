@@ -32,7 +32,12 @@ export function saveRank(r: RankLocal | null) {
 async function rpc<T>(fn: string, body: unknown): Promise<T> {
   const r = await fetch(SUPABASE_URL.replace(/\/$/, "") + "/rest/v1/rpc/" + fn, {
     method: "POST",
-    headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+    // 예전 anon key(eyJ…)는 Authorization에도 넣고, 새 publishable key(sb_publishable_…)는 apikey에만 넣어요
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      ...(SUPABASE_ANON_KEY.startsWith("eyJ") ? { Authorization: "Bearer " + SUPABASE_ANON_KEY } : {}),
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify(body),
   });
   if (!r.ok) throw new Error((await r.text().catch(() => "")) || String(r.status));
