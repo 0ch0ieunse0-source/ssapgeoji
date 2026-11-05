@@ -2,6 +2,7 @@ import { forwardRef, type InputHTMLAttributes, type KeyboardEvent, type MouseEve
 import { catVar } from "../lib/cats";
 import { fmt, parse, won } from "../lib/format";
 import { mineOf } from "../lib/ledger";
+import { roundsLabel } from "../lib/split";
 import type { Item } from "../lib/types";
 
 /** 눌러서 여는 줄을 키보드(Enter, Space)로도 열 수 있게 */
@@ -21,7 +22,8 @@ export const pressable = (onPress: () => void) => ({
 export function TxRow({ it, onClick, onDelete }: { it: Item; onClick?: () => void; onDelete?: (e: MouseEvent) => void }) {
   const cv = catVar(it.cat);
   const subs = [it.cat || "기타", (it.pay || "check") === "card" ? "신용카드" : "체크·현금"];
-  if (it.amount > mineOf(it)) subs.push("결제 " + won(it.amount) + (it.received ? " · 정산 완료" : " · 정산 대기"));
+  if (it.amount > mineOf(it))
+    subs.push("결제 " + won(it.amount) + (it.rounds?.length ? "(" + roundsLabel(it.rounds.length) + ")" : "") + (it.received ? " · 정산 완료" : " · 정산 대기"));
   return (
     <li {...(onClick ? pressable(onClick) : {})}>
       <span className="ico" style={{ background: `color-mix(in srgb, ${cv} 18%, var(--surface))`, color: cv }} aria-hidden="true">

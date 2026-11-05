@@ -14,6 +14,8 @@ export interface Item {
   mine?: number; // 친구 몫을 나눈 경우 내 몫
   received?: boolean;
   receivedOn?: Key;
+  /** 차수별 정산으로 나눴을 때만 (표시용, 계산은 amount·mine으로) */
+  rounds?: { amount: number; people: number }[];
 }
 
 export interface DayRec {

@@ -388,3 +388,15 @@ body { padding-top: calc(18px + env(safe-area-inset-top, 0px)); }
 .confetti i { position: absolute; top: -12px; width: 8px; height: 13px; border-radius: 2px; animation: fall linear forwards; }
 @keyframes fall { to { transform: translateY(110vh) rotate(540deg); opacity: .9; } }
 @media (prefers-reduced-motion: reduce) { .confetti { display: none; } }
+
+/* 추가: 차수별 정산 */
+.rounds-head, .round { display: grid; grid-template-columns: 30px minmax(0, 1fr) 84px 32px; gap: 8px; align-items: center; }
+.rounds-head { font-size: 12px; margin-bottom: -4px; }
+.round .rl { font-size: 13.5px; font-weight: 700; color: var(--muted); }
+.round input { background: var(--surface); height: 48px; }
+.round .rp { display: flex; align-items: center; gap: 4px; }
+.round .rp input { text-align: center; padding: 0 6px; }
+.round .rp span { font-size: 13px; color: var(--muted); }
+.round .x { width: 32px; height: 32px; }
+#amount[readonly] { color: var(--ink); }
+.inbox .memo { color: var(--ink); }

@@ -177,7 +177,7 @@ export function RankEvents({ local, rows, season, failed }: { local: RankLocal; 
               </span>
               <span className="t">
                 <b>{x.from_nickname + (x.kind === "cheer" ? "님이 응원했어요" : "님이 콕 찔렀어요")}</b>
-                <span>{x.kind === "cheer" ? "잘하고 있어요! 이대로 쭉" : "오늘도 한도 지켜요!"}</span>
+                <span className={x.memo ? "memo" : undefined}>{x.memo ? "“" + x.memo + "”" : x.kind === "cheer" ? "잘하고 있어요! 이대로 쭉" : "오늘도 한도 지켜요!"}</span>
               </span>
               <span className="a" />
             </li>

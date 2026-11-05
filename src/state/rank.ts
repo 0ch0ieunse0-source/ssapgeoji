@@ -75,10 +75,12 @@ export type PokeKind = "cheer" | "poke";
 export interface InboxItem {
   from_nickname: string;
   kind: PokeKind;
+  memo?: string | null;
   created_at: string;
 }
-/** 응원·콕 보내기 — 친구 코드와 종류만 보내요. "ok" 또는 "already"(오늘 이미 보냄) */
-export const sendPoke = (r: RankLocal, to: string, kind: PokeKind) =>
-  rpc<string>("geoji_poke", { p_code: r.code, p_secret: r.secret, p_to: to, p_kind: kind });
+export const POKE_MEMO_MAX = 40;
+/** 응원·콕 보내기 — 친구 코드, 종류, 직접 쓴 메모(선택)만 보내요. "ok" 또는 "already"(오늘 이미 보냄) */
+export const sendPoke = (r: RankLocal, to: string, kind: PokeKind, memo = "") =>
+  rpc<string>("geoji_poke", { p_code: r.code, p_secret: r.secret, p_to: to, p_kind: kind, p_memo: memo.trim().slice(0, POKE_MEMO_MAX) });
 /** 받은 응원·콕 (읽음 처리돼요) */
 export const fetchInbox = (r: RankLocal) => rpc<InboxItem[]>("geoji_inbox", { p_code: r.code, p_secret: r.secret });

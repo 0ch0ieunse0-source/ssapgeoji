@@ -6,6 +6,7 @@ import { dOf, md } from "../lib/date";
 import { fmt, parse, uid6, won } from "../lib/format";
 import { getDay, limitOf, setDay, spentOf } from "../lib/ledger";
 import { daysFor, periodOf, planFor } from "../lib/period";
+import { MAX_ROUNDS, splitRounds } from "../lib/split";
 import type { Item, Pay } from "../lib/types";
 import { useApp } from "../state/app";
 
@@ -20,6 +21,9 @@ export function EntrySheet() {
   const [splitOn, setSplitOn] = useState(false);
   const [splitN, setSplitN] = useState("2");
   const [splitMine, setSplitMine] = useState("");
+  const [splitMode, setSplitMode] = useState<"once" | "rounds">("once");
+  const blankRounds = () => [{ amount: "", people: "2" }];
+  const [rounds, setRounds] = useState<{ amount: string; people: string }[]>(blankRounds);
   const amtRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -38,9 +42,13 @@ export function EntrySheet() {
   if (!model) return null;
   const { cfg, cur, view } = model;
   const entryMin = cfg.firstStart || cur.start;
-  const n = parse(amount);
+  const byRounds = splitOn && splitMode === "rounds";
+  const rs = splitRounds(rounds.map((r) => ({ amount: parse(r.amount), people: parseInt(r.people, 10) || 1 })));
+  // 차수별이면 위쪽 금액 = 차수 합계
+  const n = byRounds ? rs.total : parse(amount);
   const people = Math.max(2, parseInt(splitN, 10) || 2);
-  const shareNow = Math.min(n, parse(splitMine) || Math.round(n / people));
+  const shareNow = byRounds ? rs.mine : Math.min(n, parse(splitMine) || Math.round(n / people));
+  const setRound = (i: number, patch: Partial<{ amount: string; people: string }>) => setRounds(rounds.map((r, k) => (k === i ? { ...r, ...patch } : r)));
 
   const addEntry = () => {
     if (!n) return;
@@ -49,12 +57,14 @@ export function EntrySheet() {
     if (splitOn) {
       it.mine = mine;
       it.received = false;
+      if (byRounds && rs.valid.length > 1) it.rounds = rs.valid;
     }
     update((d) => setDay(d.days, k, { items: getDay(d.days, k).items.concat([it]), noSpend: false }));
     setAmount("");
     setMemo("");
     setSplitMine("");
     setSplitOn(false);
+    setRounds(blankRounds());
     closeEntry();
     const p = periodOf(k, cfg.cycleDay);
     if (p.start !== view.start) setView(p);
@@ -76,10 +86,11 @@ export function EntrySheet() {
     <Sheet open={entry.open} onClose={closeEntry} labelledBy="entryTitle" autoFocus={false}>
       <SheetHead id="entryTitle" title={(day === today ? "오늘" : md(dOf(day))) + " 쓴 돈 적기"} onClose={closeEntry} />
       <div className="amount-wrap">
-        <MoneyInput id="amount" ref={amtRef} className="" autoComplete="off" placeholder="0" aria-label="금액" value={amount} onValue={setAmount} onKeyDown={onEnter} />
+        <MoneyInput id="amount" ref={amtRef} className="" autoComplete="off" placeholder="0" aria-label="금액" value={byRounds ? fmt(rs.total) : amount} onValue={setAmount} onKeyDown={onEnter} readOnly={byRounds} aria-readonly={byRounds} />
         <span aria-hidden="true">원</span>
       </div>
-      <div className="chips" role="group" aria-label="금액 빠르게 더하기">
+      {byRounds && <p className="hint">차수별 금액을 더한 총액이에요. 아래 차수 칸에서 바꿔요.</p>}
+      <div className="chips" role="group" aria-label="금액 빠르게 더하기" hidden={byRounds}>
         <button className="chip" onClick={() => quick(1000)}>+1천</button>
         <button className="chip" onClick={() => quick(5000)}>+5천</button>
         <button className="chip" onClick={() => quick(10000)}>+1만</button>
@@ -128,18 +139,74 @@ export function EntrySheet() {
       </label>
       {splitOn && (
         <div className="splitbox">
-          <div className="row">
-            <div className="field" style={{ flex: "1 1 100px" }}>
-              <label htmlFor="splitN">나 포함 몇 명</label>
-              <input id="splitN" type="number" min={2} max={20} inputMode="numeric" value={splitN} onChange={(e) => setSplitN(e.target.value)} />
-            </div>
-            <div className="field" style={{ flex: "2 1 140px" }}>
-              <label htmlFor="splitMine">내 몫 (비우면 N분의 1)</label>
-              <MoneyInput id="splitMine" value={splitMine} onValue={setSplitMine} placeholder={n ? Math.round(n / people).toLocaleString("ko-KR") : "0"} />
-            </div>
+          <div className="seg" role="group" aria-label="나누는 방법">
+            <button aria-pressed={splitMode === "once"} onClick={() => setSplitMode("once")}>
+              한 번에
+            </button>
+            <button
+              aria-pressed={splitMode === "rounds"}
+              onClick={() => {
+                if (splitMode !== "rounds" && !parse(rounds[0].amount) && n) setRounds([{ amount: fmt(n), people: splitN }, ...rounds.slice(1)]);
+                setSplitMode("rounds");
+              }}
+            >
+              차수별
+            </button>
           </div>
+          {splitMode === "once" ? (
+            <div className="row">
+              <div className="field" style={{ flex: "1 1 100px" }}>
+                <label htmlFor="splitN">나 포함 몇 명</label>
+                <input id="splitN" type="number" min={2} max={20} inputMode="numeric" value={splitN} onChange={(e) => setSplitN(e.target.value)} />
+              </div>
+              <div className="field" style={{ flex: "2 1 140px" }}>
+                <label htmlFor="splitMine">내 몫 (비우면 N분의 1)</label>
+                <MoneyInput id="splitMine" value={splitMine} onValue={setSplitMine} placeholder={n ? Math.round(n / people).toLocaleString("ko-KR") : "0"} />
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="rounds-head k" aria-hidden="true">
+                <span />
+                <span>금액</span>
+                <span>나 포함 인원</span>
+              </div>
+              {rounds.map((r, i) => (
+                <div key={i} className="round">
+                  <span className="rl">{i + 1 + "차"}</span>
+                  <MoneyInput aria-label={i + 1 + "차 금액"} value={r.amount} onValue={(v) => setRound(i, { amount: v })} placeholder="0" />
+                  <span className="rp">
+                    <input type="number" min={1} max={20} inputMode="numeric" aria-label={i + 1 + "차 인원 (나 포함)"} value={r.people} onChange={(e) => setRound(i, { people: e.target.value })} />
+                    <span aria-hidden="true">명</span>
+                  </span>
+                  {rounds.length > 1 ? (
+                    <button className="x" aria-label={i + 1 + "차 지우기"} onClick={() => setRounds(rounds.filter((_, k) => k !== i))}>
+                      ✕
+                    </button>
+                  ) : (
+                    <span />
+                  )}
+                </div>
+              ))}
+              {rounds.length < MAX_ROUNDS && (
+                <button className="btn soft" onClick={() => setRounds([...rounds, { amount: "", people: rounds[rounds.length - 1].people }])}>
+                  ＋ 차수 추가
+                </button>
+              )}
+              {rs.per.length > 0 && (
+                <p className="hint">
+                  {rounds
+                    .map((r, i) => (parse(r.amount) > 0 ? i + 1 + "차 1인 " + won(Math.round(parse(r.amount) / Math.max(1, parseInt(r.people, 10) || 1))) : ""))
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
+              )}
+            </>
+          )}
           <p className="hint" aria-live="polite">
-            {n ? "내 몫 " + won(shareNow) + "만 한도에서 빠지고, " + won(n - shareNow) + "은 받을 돈으로 적혀요." : "내 몫만 한도에서 빠지고, 나머지는 받을 돈으로 따로 적혀요."}
+            {n
+              ? (byRounds ? "총 " + won(n) + " 결제 · " : "") + "내 몫 " + won(shareNow) + "만 한도에서 빠지고, " + won(n - shareNow) + "은 받을 돈으로 적혀요."
+              : "내 몫만 한도에서 빠지고, 나머지는 받을 돈으로 따로 적혀요."}
           </p>
         </div>
       )}

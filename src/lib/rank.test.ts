@@ -124,7 +124,7 @@ describe("발표 연출", () => {
 });
 
 describe("응원·콕도 금액 없이", () => {
-  it("보내는 값은 코드·비밀 열쇠·받는 사람·종류뿐", async () => {
+  it("보내는 값은 코드·비밀 열쇠·받는 사람·종류·직접 쓴 메모뿐", async () => {
     const calls: unknown[] = [];
     const orig = globalThis.fetch;
     globalThis.fetch = (async (_u: string, init: { body: string }) => {
@@ -133,10 +133,11 @@ describe("응원·콕도 금액 없이", () => {
     }) as unknown as typeof fetch;
     try {
       const { sendPoke } = await import("../state/rank");
-      await sendPoke({ code: "GEOJI-ABCDEF", secret: "s", nickname: "n", friends: [], submitted: null }, "GEOJI-BCDEFG", "cheer");
+      await sendPoke({ code: "GEOJI-ABCDEF", secret: "s", nickname: "n", friends: [], submitted: null }, "GEOJI-BCDEFG", "cheer", "  커피 참아!".padEnd(60, "!"));
     } finally {
       globalThis.fetch = orig;
     }
-    expect(Object.keys(calls[0] as object).sort()).toEqual(["p_code", "p_kind", "p_secret", "p_to"]);
+    expect(Object.keys(calls[0] as object).sort()).toEqual(["p_code", "p_kind", "p_memo", "p_secret", "p_to"]);
+    expect((calls[0] as { p_memo: string }).p_memo.length).toBe(40); // 40자까지만
   });
 });
