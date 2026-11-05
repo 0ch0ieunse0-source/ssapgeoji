@@ -104,14 +104,13 @@ export function DaySheet() {
               </div>
             )}
             <div className="row">
-              {items.length === 0 && (
+              {items.length === 0 ? (
                 <button className="btn line" style={{ flex: 1 }} onClick={() => toggleNoSpend(d.key)}>
                   {ns ? "무지출 취소" : "무지출로 표시"}
                 </button>
+              ) : (
+                <p className="hint">기록이 있는 날은 무지출로 표시할 수 없어요.</p>
               )}
-              <button className="btn line" style={{ flex: 1 }} onClick={() => setAppt({ day: d.key, mode: trip ? "trip" : isAppt ? "appt" : "new", trip })}>
-                {trip ? "여행 수정" : isAppt ? "약속 수정" : "약속 추가"}
-              </button>
             </div>
           </div>
         )}
@@ -148,18 +147,23 @@ export function DaySheet() {
           <p className="dc-empty">{ns ? "무지출 성공이에요." : "이날 기록이 없어요."}</p>
         )}
 
-        {d.key <= cur.end && (
-          <button
-            className="dc-add"
-            onClick={() => {
-              const k = d.key;
-              closeDay();
-              openEntry(k);
-            }}
-          >
-            ＋ 이날 쓴 돈 추가
+        <div className="dc-actions">
+          {d.key <= cur.end && (
+            <button
+              className="dc-add"
+              onClick={() => {
+                const k = d.key;
+                closeDay();
+                openEntry(k);
+              }}
+            >
+              ＋ 이날 쓴 돈 추가
+            </button>
+          )}
+          <button className={"dc-appt" + (trip ? " trip" : "")} onClick={() => setAppt({ day: d.key, mode: trip ? "trip" : isAppt ? "appt" : "new", trip })}>
+            {trip ? "여행 수정" : isAppt ? "약속 수정" : "약속 추가"}
           </button>
-        )}
+        </div>
       </>
     );
   })();

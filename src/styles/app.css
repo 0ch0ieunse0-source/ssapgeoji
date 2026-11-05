@@ -482,3 +482,10 @@ body { padding-top: calc(18px + env(safe-area-inset-top, 0px)); }
 .rp-day.edge.e { background: linear-gradient(90deg, var(--accent-soft) 50%, transparent 50%); }
 .rp-day.s span, .rp-day.e span { background: var(--accent); color: var(--surface) !important; font-weight: 700; }
 .rp-sum { margin: 0; }
+
+/* 수정: 그날 카드 아래 버튼 두 개 (쓴 돈 추가, 약속) */
+.dc-actions { display: flex; gap: 8px; }
+.dc-actions .dc-add { flex: 1; }
+.dc-appt { flex: 0 0 auto; min-height: 48px; padding: 0 14px; border-radius: 12px; border: none; cursor: pointer; font-size: 14px; font-weight: 600;
+  background: color-mix(in srgb, var(--c4) 14%, var(--surface)); color: var(--c4); }
+.dc-appt.trip { background: var(--accent-soft); color: var(--accent); }
