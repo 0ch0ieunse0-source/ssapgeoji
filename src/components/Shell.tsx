@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { sd } from "../lib/date";
 import { currentUnread } from "../notices";
 import { shiftPeriod } from "../lib/period";
@@ -20,17 +21,37 @@ function NoticeButton() {
 }
 
 export function TopBar() {
-  const { model, go } = useApp();
+  const { model, go, route } = useApp();
   const name = model?.cfg.name;
+  // 생활비를 아직 안 넣었으면 홈에서 설정 버튼 아래에 작은 말풍선을 띄워요 (닫으면 이번에 연 동안은 안 떠요)
+  const [tipOff, setTipOff] = useState(false);
+  const tip = !!model && !model.cfg.total && route === "home" && !tipOff;
   return (
     <div className="top">
       <h1>{name ? name + "님의 거지노트" : "거지노트"}</h1>
       <div className="top-r">
         {model && <NoticeButton />}
         {model && (
-          <button className="gear" aria-label="설정" onClick={() => go("setup")}>
+          <button
+            className="gear"
+            aria-label={model.cfg.total ? "설정" : "설정, 생활비를 아직 안 넣었어요"}
+            onClick={() => {
+              setTipOff(true);
+              go("setup");
+            }}
+          >
             {Icon.gear}
           </button>
+        )}
+        {tip && (
+          <div className="gear-tip" role="note">
+            <button className="gear-tip-go" onClick={() => { setTipOff(true); go("setup/budget"); }}>
+              여기서 생활비를 넣어 주세요
+            </button>
+            <button className="gear-tip-x" aria-label="안내 닫기" onClick={() => setTipOff(true)}>
+              ✕
+            </button>
+          </div>
         )}
       </div>
     </div>

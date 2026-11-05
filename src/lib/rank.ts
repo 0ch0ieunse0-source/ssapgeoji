@@ -47,6 +47,8 @@ export interface SeasonScore {
  * 여행 날은 여행 전체로 봐요: 여행 예산 안에서 썼으면 지킨 날, 넘겼으면 못 지킨 날.
  */
 export function scoreFor(data: Data, cfg: Settings, season: Period): SeasonScore {
+  // 생활비를 아직 안 넣었으면 한도가 없어서 점수를 매기지 않아요
+  if (!cfg.total) return { pct: null, grade: null, broke: false };
   const cache = new Map<Key, DayInfo[]>();
   const infoOf = (k: Key): DayInfo => {
     const p = periodOf(k, cfg.cycleDay);

@@ -83,6 +83,10 @@ export function EntrySheet() {
       toast(won(mine) + " 기록했어요. " + (tl >= 0 ? dd.trip.name + " " + won(tl) + " 남았어요." : dd.trip.name + " 예산을 " + won(-tl) + " 넘었어요.") + oweNote, tl < 0);
       return;
     }
+    if (!cfg.total) {
+      toast(won(mine) + " 기록했어요." + oweNote);
+      return;
+    }
     const l = limitOf(S.days, dd) - (spentOf(S.days, k) + mine);
     toast(won(mine) + " 기록했어요. " + (l >= 0 ? "이날 " + won(l) + " 남았어요." : "이날 한도를 " + won(-l) + " 넘었어요.") + oweNote, l < 0);
   };

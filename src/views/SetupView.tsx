@@ -13,18 +13,21 @@ import { ACCENTS, accentLabel, accentOf, applyAccent, type AccentId } from "../l
 import { currentUnread } from "../notices";
 import { useApp } from "../state/app";
 
-const DEFAULTS: Partial<Settings> = { cycleDay: 1, total: 400000, apptLimit: 30000, appts: [], fixed: [], autoLimits: true };
+const DEFAULTS: Partial<Settings> = { cycleDay: 1, total: 0, apptLimit: 30000, appts: [], fixed: [], autoLimits: true };
 const intOrNull = (s: string) => parseInt(s, 10) || null;
 
 export function SetupView({ section = "" }: { section?: string }) {
   const { S, today, update, replace, setView, toast, go, goBack, bumpForm, openGuide } = useApp();
   const cfg = S.settings;
   const c = cfg || DEFAULTS;
+  // 처음에 '나중에 입력하기'로 시작해서 생활비가 비어 있어요
+  const blank = !!cfg && !cfg.total;
+  const [fstep, setFstep] = useState<1 | 2>(1);
 
   const [name, setName] = useState(c.name || "");
   const [cycle, setCycle] = useState(c.cycleDay || 1);
   const [total, setTotal] = useState(fmt(c.total));
-  const [apptLimit, setApptLimit] = useState(fmt(c.apptLimit));
+  const [apptLimit, setApptLimit] = useState(fmt(c.apptLimit || (blank ? DEFAULTS.apptLimit : 0)));
   const [appts, setAppts] = useState<string[]>(() => (c.appts || []).filter((k) => k >= periodOf(today, c.cycleDay || 1).start));
   const [apptDate, setApptDate] = useState("");
   const [apptName, setApptName] = useState("");
@@ -126,8 +129,46 @@ export function SetupView({ section = "" }: { section?: string }) {
     setFxAmt("");
   };
 
-  const saveSettings = () => {
-    if (!totalN) return setErr("한 달 생활비를 적어주세요.");
+  /** skip: "all"은 아무것도 넣지 않고 시작, "optional"은 2장(선택 항목)만 비우고 시작 */
+  const saveSettings = (skip?: "all" | "optional") => {
+    if (skip) {
+      const all = skip === "all";
+      update((d) => {
+        d.settings = {
+          name: all ? "" : name.trim(),
+          cycleDay: all ? 1 : cycle,
+          total: all ? 0 : totalN,
+          autoLimits: all ? true : auto,
+          weekday: all ? 0 : parse(shownWd),
+          weekend: all ? 0 : parse(shownWe),
+          appts: [],
+          trips: [],
+          apptNames: {},
+          apptLimit: all ? 0 : apl,
+          balance: null,
+          balanceDate: null,
+          payday: null,
+          salary: null,
+          fixed: [],
+          cardPay: null,
+          cardCut: null,
+          goalAmt: null,
+          goalDate: null,
+          firstStart: null,
+          accent,
+          joinDate: today,
+          preStart: all ? "zero" : preStart,
+        };
+        d.periods = {};
+      });
+      appliedAccent.current = accent;
+      setView(null);
+      toast(all ? "시작했어요. 생활비는 설정에서 넣을 수 있어요." : "시작했어요.");
+      go("home");
+      return;
+    }
+    // 생활비를 아직 안 넣었어도 다른 설정 페이지는 저장할 수 있어요
+    if (!totalN && !(blank && section !== "budget")) return setErr("한 달 생활비를 적어주세요.");
     const wdN = parse(shownWd), weN = parse(shownWe);
     if (!auto && !wdN && !weN) return setErr("하루 한도를 적거나 자동으로 나누기를 켜주세요.");
     const paydayN = intOrNull(payday), cardPayN = intOrNull(cardPay), cardCutN = intOrNull(cardCut);
@@ -162,7 +203,7 @@ export function SetupView({ section = "" }: { section?: string }) {
         cardCut: cardCutN,
         goalAmt: goalAmtN,
         goalDate: goalDateV,
-        firstStart: prev && prev.cycleDay === cycle ? prev.firstStart : null,
+        firstStart: prev && prev.cycleDay === cycle && prev.total ? prev.firstStart : null,
         accent,
         joinDate: prev?.joinDate || today,
         preStart,
@@ -241,7 +282,7 @@ export function SetupView({ section = "" }: { section?: string }) {
     toast("모든 기록을 지웠어요.");
   };
 
-  const step = (n: number, t: string) => (cfg ? t.replace(" (선택)", "") : n + " · " + t);
+  const step = (_n: number, t: string) => (cfg ? t.replace(" (선택)", "") : t);
   const nameField = (
         <div className="field">
           <label htmlFor="cName">이름 (선택)</label>
@@ -265,14 +306,14 @@ export function SetupView({ section = "" }: { section?: string }) {
           </div>
           <div className="field" style={{ flex: "2 1 150px" }}>
             <label htmlFor="cTotal">한 달 생활비 (식비, 카페, 교통, 약속 등)</label>
-            <MoneyInput id="cTotal" value={total} onValue={setTotal} placeholder="0" />
+            <MoneyInput id="cTotal" value={total} onValue={setTotal} placeholder="예: 400,000" />
           </div>
         </div>
         <div className="preview">
           <span>{"이번 달: " + md(dOf(p.start)) + " ~ " + md(dOf(p.end))}</span>
           <span className="k">{"다음 달: " + md(dOf(nx.start)) + " ~ " + md(dOf(nx.end))}</span>
         </div>
-        {preDays.length > 0 && (
+        {preDays.length > 0 && totalN > 0 && (
           <div className="pre-box">
             <div className="lbl" id="preLbl">
               {"이번 달 이미 지난 날 (" + sd(preDays[0].key) + "~" + sd(preDays[preDays.length - 1].key) + " · " + preDays.length + "일)"}
@@ -533,7 +574,7 @@ export function SetupView({ section = "" }: { section?: string }) {
   );
   const saveArea = (
     <>
-      <button className="btn" onClick={saveSettings}>
+      <button className="btn" onClick={() => saveSettings()}>
         {cfg ? "설정 저장" : "저장하고 시작하기"}
       </button>
       {err && (
@@ -544,27 +585,68 @@ export function SetupView({ section = "" }: { section?: string }) {
     </>
   );
 
-  // 처음 시작할 때: 한 장에 모두 (그대로)
-  if (!cfg)
+  // 처음 시작할 때: 두 장으로 나눠요. 둘 다 '나중에 입력하기'로 건너뛸 수 있어요
+  if (!cfg) {
+    const goStep2 = () => {
+      if (!totalN) return setErr("한 달 생활비를 적거나 '나중에 입력하기'를 눌러 주세요.");
+      setErr(null);
+      setFstep(2);
+      window.scrollTo(0, 0);
+    };
     return (
       <div className="view">
         <section className="welcome">
-          <h2>내 생활비, 하루 단위로 지키기</h2>
-          <p>기간과 생활비만 넣으면 하루 한도를 나눠드려요. 나머지는 비워둬도 되고 나중에 바꿀 수 있어요.</p>
+          <span className="k fstep">{fstep + " / 2"}</span>
+          <h2>{fstep === 1 ? "내 생활비, 하루 단위로 지키기" : "통장·카드·목표 (선택)"}</h2>
+          <p>{fstep === 1 ? "기간과 생활비만 넣으면 하루 한도를 나눠드려요." : "넣으면 돈 일정과 카드값, 목표를 계산해 드려요."}</p>
+          <p className="later-note">지금 안 넣어도 돼요. 나중에 설정에서 언제든 넣을 수 있어요.</p>
         </section>
-        {s1}
-        {s2}
-        {s3}
-        {s4}
-        {s5}
-        {s6}
-        {s7}
-        {saveArea}
+        {fstep === 1 ? (
+          <>
+            {s1}
+            {s3}
+            <p className="hint">약속·여행은 시작한 뒤 가계부 달력에서 날짜를 눌러 추가해요.</p>
+            <button className="btn" onClick={goStep2}>
+              다음
+            </button>
+          </>
+        ) : (
+          <>
+            {s4}
+            {s5}
+            {s6}
+            {s7}
+            <div className="onb-actions two">
+              <button
+                className="btn line"
+                onClick={() => {
+                  setErr(null);
+                  setFstep(1);
+                  window.scrollTo(0, 0);
+                }}
+              >
+                이전
+              </button>
+              <button className="btn" onClick={() => saveSettings()}>
+                시작하기
+              </button>
+            </div>
+          </>
+        )}
+        {err && (
+          <p className="hint" style={{ color: "var(--over)" }} role="alert">
+            {err}
+          </p>
+        )}
+        <button className="btn line" onClick={() => saveSettings(fstep === 1 ? "all" : "optional")}>
+          나중에 입력하기
+        </button>
         <button className="link" style={{ alignSelf: "center" }} onClick={() => openGuide()}>
           사용법 다시 보기
         </button>
       </div>
     );
+  }
 
   // 시작한 뒤: 메뉴 → 하위 페이지
   const PAGES: Record<string, { title: string; body: JSX.Element; save: boolean }> = {
@@ -626,7 +708,7 @@ export function SetupView({ section = "" }: { section?: string }) {
         <h1>설정</h1>
       </div>
       <section className="card menu" aria-label="내 설정">
-        {row("budget", "생활비와 한도", "매달 " + cfg.cycleDay + "일 시작 · 생활비 " + man(cfg.total) + "원", () => go("setup/budget"))}
+        {row("budget", "생활비와 한도", blank ? "아직 안 넣었어요" : "매달 " + cfg.cycleDay + "일 시작 · 생활비 " + man(cfg.total) + "원", () => go("setup/budget"))}
         {row(
           "money",
           "통장과 수입·지출",

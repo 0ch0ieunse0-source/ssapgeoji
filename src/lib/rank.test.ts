@@ -47,6 +47,10 @@ describe("시즌 성적", () => {
     const data = dataWith({ days: { "2026-11-02": { items: [item(15000)], limit: 20000, noSpend: false } } });
     expect(scoreFor(data, cfg, season).pct).toBe(100);
   });
+  it("생활비를 아직 안 넣었으면 (나중에 입력하기) 점수 없음, 파산도 아니에요", () => {
+    const data = dataWith({ days: { "2026-11-02": { items: [item(9000)], limit: null, noSpend: false } } });
+    expect(scoreFor(data, makeCfg({ total: 0, weekday: 0, weekend: 0 }), season)).toEqual({ pct: null, grade: null, broke: false });
+  });
   it("기록이 없으면 점수 없음", () => {
     expect(scoreFor(dataWith(), cfg, season)).toEqual({ pct: null, grade: null, broke: false });
   });
