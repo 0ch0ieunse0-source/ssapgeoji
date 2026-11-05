@@ -15,7 +15,7 @@ export interface Item {
   received?: boolean;
   receivedOn?: Key;
   /** 차수별 정산으로 나눴을 때만 (표시용, 계산은 amount·mine으로) */
-  rounds?: { amount: number; people: number }[];
+  rounds?: { amount: number; people: number; cat?: string; mine?: number }[];
   /** 정산 메시지용 (선택): 한 번에 나눌 때 인원, 친구 이름, 차수별 참여 */
   settle?: { people?: number; names: string[]; attend?: boolean[][]; amounts?: number[] };
 }

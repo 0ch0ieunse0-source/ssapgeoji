@@ -4,7 +4,7 @@ import { Sheet } from "../components/Sheet";
 import { catVar } from "../lib/cats";
 import { dOf, DOW, md, sd } from "../lib/date";
 import { parse, won } from "../lib/format";
-import { getDay, isNoSpend, limitOf, mineOf, setDay, spentOf } from "../lib/ledger";
+import { catsLabel, getDay, isNoSpend, limitOf, mineOf, setDay, spentOf } from "../lib/ledger";
 import { roundsLabel } from "../lib/split";
 import { tripSpent } from "../lib/trip";
 import { useApp } from "../state/app";
@@ -116,7 +116,7 @@ export function DaySheet() {
         {items.length > 0 ? (
           <ul className="evlist">
             {items.map((it) => {
-              const subs = [it.cat || "기타", (it.pay || "check") === "card" ? "신용카드" : "체크·현금"];
+              const subs = [catsLabel(it), (it.pay || "check") === "card" ? "신용카드" : "체크·현금"];
               if (it.amount > mineOf(it)) subs.push("결제 " + won(it.amount) + (it.rounds?.length ? "(" + roundsLabel(it.rounds.length) + ")" : ""));
               return (
                 <li key={it.id} style={{ borderLeftColor: catVar(it.cat) }}>

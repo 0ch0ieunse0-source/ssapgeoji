@@ -99,12 +99,12 @@ export function settleMessageFrom(m: {
   title: string;
   date: Key;
   total: number;
-  rounds: { amount: number; people: number }[];
+  rounds: { amount: number; people: number; cat?: string }[];
   lines: { name: string; amount: number; note?: string }[];
   account?: SettleAccount | null;
 }): string {
   const out: string[] = ["[정산] " + (m.title || "정산") + " (" + sd(m.date) + ")", "총 " + won(m.total)];
-  if (m.rounds.length > 1) m.rounds.forEach((r, k) => out.push(k + 1 + "차 " + won(r.amount) + " · " + r.people + "명"));
+  if (m.rounds.length > 1) m.rounds.forEach((r, k) => out.push(k + 1 + "차" + (r.cat ? " " + r.cat : "") + " " + won(r.amount) + " · " + r.people + "명"));
   out.push("");
   m.lines.forEach((l) => out.push(l.name + " " + won(l.amount) + (l.note ? " (" + l.note + ")" : "")));
   const a = m.account;

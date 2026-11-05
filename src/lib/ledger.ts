@@ -31,3 +31,23 @@ export const everyItem = (m: DaysMap) =>
 
 /** 아직 못 받은 친구 몫 */
 export const owesOf = (m: DaysMap) => everyItem(m).filter(({ it }) => it.amount > mineOf(it) && !it.received);
+
+/** 분류별 내 몫: 차수마다 분류가 있으면 차수별로 나눠요 (합계는 내 몫과 같아요) */
+export function catShares(it: Item): { cat: string; v: number }[] {
+  const m = mineOf(it);
+  const rs = it.rounds;
+  if (!rs?.length || !rs.some((r) => r.cat)) return [{ cat: it.cat || "기타", v: m }];
+  const w = rs.map((r) => (typeof r.mine === "number" ? r.mine : r.amount));
+  const W = w.reduce((a, b) => a + b, 0) || 1;
+  let acc = 0;
+  return rs.map((r, i) => {
+    const v = i === rs.length - 1 ? m - acc : Math.round((m * w[i]) / W);
+    acc += v;
+    return { cat: r.cat || it.cat || "기타", v };
+  });
+}
+/** 내역에 보일 분류: "식비·카페·간식" (세 개 넘으면 "외") */
+export function catsLabel(it: Item): string {
+  const cats = [...new Set(catShares(it).map((x) => x.cat))];
+  return cats.length > 2 ? cats.slice(0, 2).join("·") + " 외" : cats.join("·");
+}

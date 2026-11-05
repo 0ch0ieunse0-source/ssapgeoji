@@ -44,11 +44,9 @@ export function SettleView() {
   const { cfg, cur } = useModel();
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [title, setTitle] = useState("");
-  const [amount, setAmount] = useState("");
-  const [useRounds, setUseRounds] = useState(false);
-  const [rounds, setRounds] = useState<string[]>(["", ""]);
+  // 차수 카드: 1차부터 시작해서 필요할 때만 2차, 3차를 추가해요 (차수마다 금액·분류)
+  const [rounds, setRounds] = useState<{ amount: string; cat: string }[]>([{ amount: "", cat: "식비" }]);
   const [day, setDay2] = useState(today);
-  const [cat, setCat] = useState("식비");
   const [pay, setPay] = useState<Pay>("check");
   const [names, setNames] = useState<string[]>([]);
   const [nameIn, setNameIn] = useState("");
@@ -61,11 +59,13 @@ export function SettleView() {
   const recent = useMemo(loadRecent, []);
   const topRef = useRef<HTMLHeadingElement>(null);
 
-  const roundAmts = useRounds ? rounds.map(parse) : [];
-  const validRounds = roundAmts.filter((x) => x > 0);
-  const total = useRounds ? validRounds.reduce((a, b) => a + b, 0) : parse(amount);
+  const valid = rounds.map((r) => ({ amount: parse(r.amount), cat: r.cat })).filter((r) => r.amount > 0);
+  const validRounds = valid.map((r) => r.amount);
+  const total = validRounds.reduce((a, b) => a + b, 0);
+  const cat = valid[0]?.cat || rounds[0].cat;
+  const setRound = (k: number, patch: Partial<{ amount: string; cat: string }>) => setRounds(rounds.map((r, j) => (j === k ? { ...r, ...patch } : r)));
   const people = names.length + 1;
-  const rN = useRounds && validRounds.length > 1 ? validRounds.length : 0;
+  const rN = valid.length > 1 ? valid.length : 0;
   const att = (i: number, k: number) => attend[i]?.[k] ?? true;
   const attendRows = Array.from({ length: people }, (_, i) => Array.from({ length: rN }, (_, k) => att(i, k)));
   const res = computeShares({
@@ -101,7 +101,7 @@ export function SettleView() {
   const toggleAtt = (i: number, k: number) => setAttend(attendRows.map((row, j) => row.map((v, kk) => (j === i && kk === k ? !v : v))));
 
   const next1 = () => {
-    if (!total) return toast(useRounds ? "차수 금액을 넣어주세요." : "나눌 금액을 넣어주세요.", true);
+    if (!total) return toast("나눌 금액을 넣어주세요.", true);
     goStep(2);
   };
   const next2 = () => {
@@ -115,7 +115,17 @@ export function SettleView() {
     if (res.error) return toast(res.error, true);
     const mine = res.mine;
     const it: Item = { id: uid6(), amount: total, memo: title.trim() || cat, cat, pay, t: Date.now(), mine, received: false };
-    if (rN) it.rounds = validRounds.map((a, k) => ({ amount: a, people: attendRows.filter((r) => r[k]).length }));
+    if (rN) {
+      // 내 몫을 차수마다 나눠 둬요 (차수 분류별 소비 리포트용). 내가 낸 차수 비율대로, 합계는 내 몫
+      const even = valid.map((r, k) => (attendRows[0][k] ? r.amount / Math.max(1, attendRows.filter((x) => x[k]).length) : 0));
+      const W = even.reduce((a, b) => a + b, 0);
+      let acc = 0;
+      it.rounds = valid.map((r, k) => {
+        const m = k === valid.length - 1 ? mine - acc : W ? Math.round((mine * even[k]) / W) : 0;
+        acc += m;
+        return { amount: r.amount, people: attendRows.filter((x) => x[k]).length, cat: r.cat, mine: m };
+      });
+    }
     it.settle = { names, amounts: res.shares.slice(1), attend: rN ? attendRows.slice(1) : undefined };
     update((d) => setDay(d.days, day, { items: getDay(d.days, day).items.concat([it]), noSpend: false }));
     saveRecent(names);
@@ -128,7 +138,7 @@ export function SettleView() {
       title: title.trim() || cat,
       date: day,
       total,
-      rounds: rN ? validRounds.map((a, k) => ({ amount: a, people: attendRows.filter((r) => r[k]).length })) : [],
+      rounds: rN ? valid.map((r, k) => ({ amount: r.amount, people: attendRows.filter((x) => x[k]).length, cat: r.cat })) : [],
       lines: names.map((n, i) => ({ name: n, amount: res.shares[i + 1], note: attendNote(attendRows[i + 1], rN) })),
       account: loadAccount(),
     });
@@ -157,57 +167,37 @@ export function SettleView() {
               <label htmlFor="stTitle">무엇을 정산할까요?</label>
               <input id="stTitle" maxLength={20} placeholder="예: 치킨, 회식" value={title} onChange={(e) => setTitle(e.target.value)} />
             </div>
-            {!useRounds ? (
-              <>
+            {rounds.map((r, k) => (
+              <div key={k} className="st-rcard">
+                <div className="st-rhead">
+                  <b>{rounds.length > 1 ? k + 1 + "차" : "금액"}</b>
+                  {rounds.length > 1 && (
+                    <button className="del" aria-label={k + 1 + "차 지우기"} onClick={() => setRounds(rounds.filter((_, j2) => j2 !== k))}>
+                      지우기
+                    </button>
+                  )}
+                </div>
                 <div className="amount-wrap st-amt">
-                  <MoneyInput id="stAmount" className="" aria-label="나눌 금액" placeholder="0" value={amount} onValue={setAmount} />
+                  <MoneyInput className="big-amt" aria-label={(rounds.length > 1 ? k + 1 + "차 " : "") + "금액"} placeholder="0" value={r.amount} onValue={(v) => setRound(k, { amount: v })} />
                   <span aria-hidden="true">원</span>
                 </div>
-                <div className="chips" role="group" aria-label="금액 빠르게 더하기">
-                  {[10000, 50000, 100000].map((a) => (
-                    <button key={a} className="chip" onClick={() => setAmount(fmt(parse(amount) + a))}>
-                      {"+" + (a / 10000) + "만"}
+                <div className="chips st-cats" role="group" aria-label={(rounds.length > 1 ? k + 1 + "차 " : "") + "분류"}>
+                  {CATS.map((c) => (
+                    <button key={c.n} className="chip" aria-pressed={c.n === r.cat} onClick={() => setRound(k, { cat: c.n })}>
+                      <i style={{ background: "var(" + c.c + ")" }} aria-hidden="true" />
+                      {c.n}
                     </button>
                   ))}
-                  <button className="chip" onClick={() => setAmount("")}>
-                    지우기
-                  </button>
                 </div>
-              </>
-            ) : (
-              <>
-                {rounds.map((r, k) => (
-                  <div key={k} className="st-round">
-                    <span className="rl">{k + 1 + "차"}</span>
-                    <MoneyInput aria-label={k + 1 + "차 금액"} placeholder="0" value={r} onValue={(v) => setRounds(rounds.map((x, j) => (j === k ? v : x)))} />
-                    {rounds.length > 2 ? (
-                      <button className="x" aria-label={k + 1 + "차 지우기"} onClick={() => setRounds(rounds.filter((_, j) => j !== k))}>
-                        ✕
-                      </button>
-                    ) : (
-                      <span />
-                    )}
-                  </div>
-                ))}
-                {rounds.length < MAX_ROUNDS && (
-                  <button className="btn soft" onClick={() => setRounds([...rounds, ""])}>
-                    ＋ 차수 추가
-                  </button>
-                )}
-                <div className="st-total">{"총 " + won(total)}</div>
-              </>
+              </div>
+            ))}
+            {rounds.length < MAX_ROUNDS && (
+              <button className="st-addround" onClick={() => setRounds([...rounds, { amount: "", cat: rounds[rounds.length - 1].cat }])}>
+                {"＋ " + (rounds.length + 1) + "차 추가"}
+                <span>{rounds.length === 1 ? "2차, 3차로 이어졌다면" : ""}</span>
+              </button>
             )}
-            <button
-              className="link"
-              style={{ alignSelf: "flex-start" }}
-              onClick={() => {
-                if (!useRounds && parse(amount)) setRounds([amount, ""]);
-                if (useRounds && validRounds.length) setAmount(fmt(total));
-                setUseRounds(!useRounds);
-              }}
-            >
-              {useRounds ? "한 번에 나누기로" : "＋ 차수 나누기 (1차, 2차…)"}
-            </button>
+            {rounds.length > 1 && <div className="st-total">{"총 " + won(total)}</div>}
           </section>
           <section className="card setup-sec">
             <div className="row">
@@ -225,17 +215,6 @@ export function SettleView() {
                   }}
                 />
               </div>
-            </div>
-            <div className="lbl" id="stCatLbl">
-              분류
-            </div>
-            <div className="chips" role="group" aria-labelledby="stCatLbl">
-              {CATS.map((c) => (
-                <button key={c.n} className="chip" aria-pressed={c.n === cat} onClick={() => setCat(c.n)}>
-                  <i style={{ background: "var(" + c.c + ")" }} aria-hidden="true" />
-                  {c.n}
-                </button>
-              ))}
             </div>
             <div className="seg" role="group" aria-label="결제 수단">
               <button aria-pressed={pay === "check"} onClick={() => setPay("check")}>

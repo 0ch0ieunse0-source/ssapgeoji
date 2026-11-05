@@ -12,7 +12,7 @@ import { dOf, DOW, md, sd } from "../lib/date";
 const dayDiffInc = (a: string, b: string) => Math.round((dOf(b).getTime() - dOf(a).getTime()) / 86400000) + 1;
 import { flowAmount, flowItems } from "../lib/flow";
 import { man, won } from "../lib/format";
-import { getDay, isNoSpend, limitOf, mineOf, owesOf, paidOf, setDay, spentOf, viewItems } from "../lib/ledger";
+import { catShares, getDay, isNoSpend, limitOf, mineOf, owesOf, paidOf, setDay, spentOf, viewItems } from "../lib/ledger";
 import { tripSpent } from "../lib/trip";
 
 import { shiftPeriod } from "../lib/period";
@@ -42,11 +42,12 @@ export function HomeView() {
   // 소비 리포트
   const sums: Record<string, number> = {};
   let tot = 0;
-  viewItems(D, days).forEach(({ it }) => {
-    const v = mineOf(it);
-    sums[it.cat || "기타"] = (sums[it.cat || "기타"] || 0) + v;
-    tot += v;
-  });
+  viewItems(D, days).forEach(({ it }) =>
+    catShares(it).forEach(({ cat, v }) => {
+      sums[cat] = (sums[cat] || 0) + v;
+      tot += v;
+    }),
+  );
   const sorted = Object.keys(sums).filter((k) => sums[k] > 0).sort((a, b) => sums[b] - sums[a]);
   const planned = days.filter((d) => d.key <= refKey).reduce((s, d) => s + limitOf(D, d), 0);
   const spentTo = days.filter((d) => d.key <= refKey).reduce((s, d) => s + spentOf(D, d.key), 0);

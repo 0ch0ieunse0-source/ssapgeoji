@@ -507,7 +507,7 @@ body { padding-top: calc(18px + env(safe-area-inset-top, 0px)); }
 /* 수정: 아이폰에서 입력칸을 누르면 화면이 확대되던 문제
    (Safari는 글자가 16px보다 작은 입력칸에 초점이 가면 자동으로 확대해요. 손가락으로 쓰는 기기에서만 16px로 맞춰요) */
 @media (pointer: coarse) {
-  input:not(#amount):not([type="checkbox"]):not([type="radio"]), select, textarea { font-size: 16px !important; }
+  input:not(#amount):not(.big-amt):not([type="checkbox"]):not([type="radio"]), select, textarea { font-size: 16px !important; }
 }
 /* 버튼을 빨리 두 번 눌렀을 때 확대되지 않게 (두 손가락 확대는 그대로 돼요) */
 html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
@@ -527,8 +527,8 @@ html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adj
 .st-head h1:focus, .settle-view:focus { outline: none; }
 .st-head .pbtn { background: var(--surface); box-shadow: var(--shadow); }
 .st-q { font-size: 19px !important; letter-spacing: -0.02em; }
-.st-amt #stAmount { background: none; border: none; padding: 4px 0; font-size: 32px; font-weight: 700; letter-spacing: -0.02em; height: auto; }
-.st-amt #stAmount:focus-visible { outline: none; }
+.st-amt input.big-amt { background: none; border: none; padding: 4px 0; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; height: auto; text-align: left; }
+.st-amt input.big-amt:focus-visible { outline: none; }
 .st-round { display: grid; grid-template-columns: 34px minmax(0, 1fr) 32px; gap: 8px; align-items: center; }
 .st-round .rl, .att-row .rl { font-size: 13.5px; font-weight: 700; color: var(--muted); }
 .st-total { font-size: 15px; font-weight: 700; text-align: right; }
@@ -558,3 +558,14 @@ html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adj
 .shares input { width: 130px; }
 .st-done { align-items: center; text-align: center; }
 .st-check { width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: var(--surface); display: grid; place-items: center; font-size: 28px; font-weight: 700; }
+
+/* 수정: 정산하기 차수 카드 */
+.st-rcard { display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; }
+.st-rhead { display: flex; justify-content: space-between; align-items: center; }
+.st-rhead b { font-size: 14px; color: var(--accent); }
+.st-cats { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.st-cats::-webkit-scrollbar { display: none; }
+.st-cats .chip { flex: none; padding: 6px 11px; font-size: 13px; }
+.st-addround { border: 1.5px dashed var(--line); background: transparent; border-radius: 14px; min-height: 52px; cursor: pointer; color: var(--accent); font-weight: 700; font-size: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; }
+.st-addround span { font-size: 12px; font-weight: 400; color: var(--muted); }
+.st-addround span:empty { display: none; }
