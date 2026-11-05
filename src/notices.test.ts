@@ -14,5 +14,6 @@ describe("공지사항", () => {
     expect(new Set(NOTICES.map((n) => n.id)).size).toBe(NOTICES.length);
     const dates = NOTICES.map((n) => n.date);
     expect([...dates].sort().reverse()).toEqual(dates);
+    expect(unreadCount([], null)).toBe(0); // 공지가 없으면 빨간 점도 없어요
   });
 });

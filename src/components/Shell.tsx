@@ -1,56 +1,27 @@
-import { useEffect, useState } from "react";
-import { dOf, md, sd } from "../lib/date";
-import { markNoticesSeen, NOTICES, readNoticeSeen, unreadCount } from "../notices";
-import { Sheet, SheetHead } from "./Sheet";
+import { sd } from "../lib/date";
+import { NOTICES, readNoticeSeen, unreadCount } from "../notices";
 import { shiftPeriod } from "../lib/period";
 import { useApp, type ViewName } from "../state/app";
 import { Icon } from "./common";
 
+/** 공지사항 페이지로 들어왔는지 (뒤로가기를 눌렀을 때 원래 화면으로 돌아가려고 기억해요) */
+export const noticeNav = { fromApp: false };
+
 function NoticeButton() {
-  const [open, setOpen] = useState(false);
-  const [seen, setSeen] = useState(readNoticeSeen);
-  const unread = unreadCount(NOTICES, seen);
-  const show = () => {
-    setOpen(true);
-  };
-  const close = () => {
-    markNoticesSeen();
-    setSeen(readNoticeSeen());
-    setOpen(false);
-  };
-  useEffect(() => {
-    if (!open) return;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [open]);
+  const { go } = useApp();
+  const unread = unreadCount(NOTICES, readNoticeSeen());
   return (
-    <>
-      <button className="gear" aria-label={unread ? "공지사항, 새 소식 " + unread + "개" : "공지사항"} onClick={show}>
-        {Icon.bell}
-        {unread > 0 && <span className="dot" aria-hidden="true" />}
-      </button>
-      <Sheet open={open} onClose={close} labelledBy="noticeTitle">
-        <SheetHead id="noticeTitle" title="공지사항" onClose={close} />
-        <ul className="notices">
-          {NOTICES.map((n, i) => (
-            <li key={n.id}>
-              <div className="nhead">
-                <span className="k">{md(dOf(n.date))}</span>
-                {i < unread && <span className="badge">새 소식</span>}
-              </div>
-              <b>{n.title}</b>
-              <ul>
-                {n.body.map((line, k) => (
-                  <li key={k}>{line}</li>
-                ))}
-              </ul>
-            </li>
-          ))}
-        </ul>
-      </Sheet>
-    </>
+    <button
+      className="gear"
+      aria-label={unread ? "공지사항, 새 소식 " + unread + "개" : "공지사항"}
+      onClick={() => {
+        noticeNav.fromApp = true;
+        go("notice");
+      }}
+    >
+      {Icon.bell}
+      {unread > 0 && <span className="dot" aria-hidden="true" />}
+    </button>
   );
 }
 

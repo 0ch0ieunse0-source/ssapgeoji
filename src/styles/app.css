@@ -283,12 +283,15 @@ body { padding-top: calc(18px + env(safe-area-inset-top, 0px)); }
 .onb-a { display: flex; align-items: center; justify-content: center; text-decoration: none; }
 .onb-text .alert { margin: 0; }
 
-/* 추가: 공지사항 */
+/* 추가: 공지사항 페이지 */
 .gear { position: relative; }
 .gear .dot { position: absolute; top: 6px; right: 7px; width: 8px; height: 8px; border-radius: 50%; background: var(--over); box-shadow: 0 0 0 2px var(--surface); }
-.notices { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-.notices > li { display: flex; flex-direction: column; gap: 4px; padding: 14px 0; border-top: 1px solid var(--line); }
-.notices > li:first-child { border-top: none; padding-top: 0; }
-.notices .nhead { display: flex; align-items: center; gap: 8px; }
-.notices b { font-weight: 700; font-size: 15.5px; }
-.notices ul { margin: 2px 0 0; padding-left: 18px; color: var(--muted); font-size: 14px; display: flex; flex-direction: column; gap: 3px; }
+.page-head { display: flex; align-items: center; gap: 10px; padding: 0 2px; }
+.page-head h1 { font-size: 20px; font-weight: 700; margin: 0; letter-spacing: -0.02em; }
+.page-head h1:focus { outline: none; }
+.page-head .pbtn { background: var(--surface); box-shadow: var(--shadow); }
+.notice { gap: 6px; border: 1.5px solid transparent; }
+.notice.unread { border-color: var(--accent); }
+.notice .nhead { display: flex; align-items: center; gap: 8px; }
+.notice h2 { font-size: 16px; line-height: 1.4; }
+.notice ul { margin: 2px 0 0; padding-left: 18px; color: var(--muted); font-size: 14px; line-height: 1.6; display: flex; flex-direction: column; gap: 4px; }
