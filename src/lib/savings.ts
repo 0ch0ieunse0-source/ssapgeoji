@@ -24,3 +24,15 @@ export function waitLeft(w: Wish, nowMs: number): string | null {
   const h = Math.ceil(ms / 3600000);
   return h >= 24 ? Math.floor(h / 24) + "일 " + (h % 24 ? (h % 24) + "시간 " : "") + "남음" : h + "시간 남음";
 }
+
+/** 사고 싶은 것 대기 기간 (시간) */
+export const WAIT_OPTIONS = [
+  { h: 24, label: "하루" },
+  { h: 72, label: "3일" },
+  { h: 168, label: "1주" },
+  { h: 336, label: "2주" },
+  { h: 720, label: "1달" },
+];
+/** 가격에 맞춘 기본 대기 기간: 5만원 미만 하루, 30만원 미만 3일, 100만원 미만 1주, 100만원 이상 1달 */
+export const waitForPrice = (price: number) => (price >= 1000000 ? 720 : price >= 300000 ? 168 : price >= 50000 ? 72 : 24);
+export const waitLabel = (h: number) => WAIT_OPTIONS.find((o) => o.h === h)?.label ?? Math.round(h / 24) + "일";

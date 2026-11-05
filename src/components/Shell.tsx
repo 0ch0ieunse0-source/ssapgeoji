@@ -4,9 +4,6 @@ import { shiftPeriod } from "../lib/period";
 import { useApp, type ViewName } from "../state/app";
 import { Icon } from "./common";
 
-/** 공지사항 페이지로 들어왔는지 (뒤로가기를 눌렀을 때 원래 화면으로 돌아가려고 기억해요) */
-export const noticeNav = { fromApp: false };
-
 function NoticeButton() {
   const { go } = useApp();
   const unread = unreadCount(NOTICES, readNoticeSeen());
@@ -14,10 +11,7 @@ function NoticeButton() {
     <button
       className="gear"
       aria-label={unread ? "공지사항, 새 소식 " + unread + "개" : "공지사항"}
-      onClick={() => {
-        noticeNav.fromApp = true;
-        go("notice");
-      }}
+      onClick={() => go("notice")}
     >
       {Icon.bell}
       {unread > 0 && <span className="dot" aria-hidden="true" />}

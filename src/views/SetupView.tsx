@@ -1,17 +1,21 @@
 import { useEffect, useRef, useState } from "react";
 import { MoneyInput, SmallIco } from "../components/common";
 import { dOf, DOW, md, sd } from "../lib/date";
-import { fmt, parse, uid6, won } from "../lib/format";
+import { fmt, man, parse, uid6, won } from "../lib/format";
 import { countsFor, periodOf, shiftPeriod, splitFor } from "../lib/period";
 import { EMPTY, normalize } from "../lib/storage";
 import type { Data, Fixed, Settings } from "../lib/types";
+import { PageHead } from "../components/PageHead";
+import { Icon } from "../components/common";
+import { ACCENTS, accentLabel, accentOf, applyAccent, type AccentId } from "../lib/theme";
+import { NOTICES, readNoticeSeen, unreadCount } from "../notices";
 import { useApp } from "../state/app";
 
 const DEFAULTS: Partial<Settings> = { cycleDay: 1, total: 400000, apptLimit: 30000, appts: [], fixed: [], autoLimits: true };
 const intOrNull = (s: string) => parseInt(s, 10) || null;
 
-export function SetupView() {
-  const { S, today, update, replace, setView, toast, go, bumpForm, openGuide } = useApp();
+export function SetupView({ section = "" }: { section?: string }) {
+  const { S, today, update, replace, setView, toast, go, goBack, bumpForm, openGuide } = useApp();
   const cfg = S.settings;
   const c = cfg || DEFAULTS;
 
@@ -36,6 +40,14 @@ export function SetupView() {
   const [goalAmt, setGoalAmt] = useState(fmt(c.goalAmt));
   const [goalDate, setGoalDate] = useState(c.goalDate || "");
   const [err, setErr] = useState<string | null>(null);
+  const [accent, setAccent] = useState<AccentId>(accentOf(c.accent));
+  // 화면 페이지에서 고르는 동안 바로 미리 보여주고, 저장 안 하고 나가면 원래 색으로 돌려놔요
+  const appliedAccent = useRef<AccentId>(accentOf(cfg?.accent));
+  useEffect(() => {
+    if (section !== "look") return;
+    applyAccent(accent);
+    return () => applyAccent(appliedAccent.current);
+  }, [section, accent]);
 
   // 미리 보기
   const p = periodOf(today, cycle), nx = shiftPeriod(p, 1, cycle);
@@ -107,6 +119,7 @@ export function SetupView() {
         goalAmt: goalAmtN,
         goalDate: goalDateV,
         firstStart: prev && prev.cycleDay === cycle ? prev.firstStart : null,
+        accent,
       };
       // 이번 달부터는 새 설정으로 다시 나누기 (지난 달 계획은 그대로)
       Object.keys(d.periods).forEach((k) => {
@@ -114,9 +127,11 @@ export function SetupView() {
       });
       if (prev && prev.cycleDay !== cycle) d.periods = {};
     });
+    appliedAccent.current = accent;
     setView(null);
     toast(prev ? "저장했어요. 이번 달부터 새 설정이 적용돼요." : "시작했어요.");
-    go("home");
+    if (prev && section) goBack("setup");
+    else go("home");
   };
 
   // 백업
@@ -180,21 +195,17 @@ export function SetupView() {
     toast("모든 기록을 지웠어요.");
   };
 
-  return (
-    <div className="view">
-      {!cfg && (
-        <section className="welcome">
-          <h2>내 생활비, 하루 단위로 지키기</h2>
-          <p>기간과 생활비만 넣으면 하루 한도를 나눠드려요. 나머지는 비워둬도 되고 나중에 바꿀 수 있어요.</p>
-        </section>
-      )}
-
-      <section className="card setup-sec">
-        <span className="step">1 · 한 달 생활비</span>
+  const step = (n: number, t: string) => (cfg ? t.replace(" (선택)", "") : n + " · " + t);
+  const nameField = (
         <div className="field">
           <label htmlFor="cName">이름 (선택)</label>
           <input id="cName" maxLength={12} placeholder="예: 지민" value={name} onChange={(e) => setName(e.target.value)} />
         </div>
+  );
+  const s1 = (
+      <section className="card setup-sec">
+        <span className="step">{step(1, "한 달 생활비")}</span>
+        {!cfg && nameField}
         <div className="row">
           <div className="field" style={{ flex: "1 1 120px" }}>
             <label htmlFor="cCycle">매달 시작하는 날</label>
@@ -217,9 +228,10 @@ export function SetupView() {
         </div>
         <p className="hint">월급날로 맞추면 편해요. 31일처럼 없는 날은 그 달 마지막 날로 맞춰요. 한 달이 끝나면 다음 달이 저절로 시작돼요.</p>
       </section>
-
+  );
+  const s2 = (
       <section className="card setup-sec">
-        <span className="step">2 · 약속 날짜</span>
+        <span className="step">{step(2, "약속 날짜")}</span>
         <p className="hint">약속 있는 날은 한도를 더 크게 잡아요. 가계부 달력에서 날짜를 눌러 약속 날로 표시해도 돼요.</p>
         <div className="row">
           <div className="field" style={{ flex: "2 1 150px" }}>
@@ -248,9 +260,10 @@ export function SetupView() {
           <MoneyInput id="cApptLimit" value={apptLimit} onValue={setApptLimit} placeholder="0" />
         </div>
       </section>
-
+  );
+  const s3 = (
       <section className="card setup-sec">
-        <span className="step">3 · 하루 한도</span>
+        <span className="step">{step(3, "하루 한도")}</span>
         <div className="row">
           <div className="field">
             <label htmlFor="cWeekday">평일</label>
@@ -273,9 +286,10 @@ export function SetupView() {
           {auto && <span className="k">달마다 날짜 수가 달라서 한도는 매달 새로 나눠요.</span>}
         </div>
       </section>
-
+  );
+  const s4 = (
       <section className="card setup-sec">
-        <span className="step">4 · 통장과 월급 (선택)</span>
+        <span className="step">{step(4, "통장과 월급 (선택)")}</span>
         <p className="hint">넣으면 '돈 일정' 탭에서 날짜별 통장 예상 잔액을 계산해요.</p>
         <div className="field">
           <label htmlFor="cBalance">지금 통장 잔액 (오늘 기준, 파킹통장 포함)</label>
@@ -292,9 +306,10 @@ export function SetupView() {
           </div>
         </div>
       </section>
-
+  );
+  const s5 = (
       <section className="card setup-sec">
-        <span className="step">5 · 매달 나가는 돈 (선택)</span>
+        <span className="step">{step(5, "매달 나가는 돈 (선택)")}</span>
         <p className="hint">월세, 대출, 통신비, 적금처럼 날짜가 정해진 돈이에요.</p>
         <div className="row">
           <div className="field" style={{ flex: "2 1 120px" }}>
@@ -331,9 +346,10 @@ export function SetupView() {
           ))}
         </ul>
       </section>
-
+  );
+  const s6 = (
       <section className="card setup-sec">
-        <span className="step">6 · 신용카드 (선택)</span>
+        <span className="step">{step(6, "신용카드 (선택)")}</span>
         <p className="hint">결제일과 사용 마감일을 넣으면 신용카드로 쓴 생활비가 어느 카드값에 붙는지 알려줘요.</p>
         <div className="row">
           <div className="field">
@@ -346,9 +362,10 @@ export function SetupView() {
           </div>
         </div>
       </section>
-
+  );
+  const s7 = (
       <section className="card setup-sec">
-        <span className="step">7 · 저축 목표 (선택)</span>
+        <span className="step">{step(7, "저축 목표 (선택)")}</span>
         <div className="row">
           <div className="field">
             <label htmlFor="cGoalAmt">목표 금액</label>
@@ -360,18 +377,9 @@ export function SetupView() {
           </div>
         </div>
       </section>
-
-      <button className="btn" onClick={saveSettings}>
-        {cfg ? "설정 저장" : "저장하고 시작하기"}
-      </button>
-      {err && (
-        <p className="hint" style={{ color: "var(--over)" }} role="alert">
-          {err}
-        </p>
-      )}
-
-      {cfg && (
-        <section className="card setup-sec">
+  );
+  const dataCard = (
+      <section className="card setup-sec">
           <h2>기록 보관</h2>
           <p className="hint">기록은 이 기기의 브라우저에만 저장돼요. 기기를 바꾸거나 브라우저 기록을 지우기 전에 백업 파일을 저장해 두세요.</p>
           <div className="row">
@@ -395,10 +403,122 @@ export function SetupView() {
             {resetArmed ? "한 번 더 누르면 모든 기록이 지워져요" : "모든 기록 지우기"}
           </button>
         </section>
-      )}
-      <button className="link" style={{ alignSelf: "center" }} onClick={openGuide}>
-        사용법 다시 보기
+  );
+  const saveArea = (
+    <>
+      <button className="btn" onClick={saveSettings}>
+        {cfg ? "설정 저장" : "저장하고 시작하기"}
       </button>
+      {err && (
+        <p className="hint" style={{ color: "var(--over)" }} role="alert">
+          {err}
+        </p>
+      )}
+    </>
+  );
+
+  // 처음 시작할 때: 한 장에 모두 (그대로)
+  if (!cfg)
+    return (
+      <div className="view">
+        <section className="welcome">
+          <h2>내 생활비, 하루 단위로 지키기</h2>
+          <p>기간과 생활비만 넣으면 하루 한도를 나눠드려요. 나머지는 비워둬도 되고 나중에 바꿀 수 있어요.</p>
+        </section>
+        {s1}
+        {s2}
+        {s3}
+        {s4}
+        {s5}
+        {s6}
+        {s7}
+        {saveArea}
+        <button className="link" style={{ alignSelf: "center" }} onClick={openGuide}>
+          사용법 다시 보기
+        </button>
+      </div>
+    );
+
+  // 시작한 뒤: 메뉴 → 하위 페이지
+  const PAGES: Record<string, { title: string; body: JSX.Element; save: boolean }> = {
+    budget: { title: "생활비와 한도", body: <>{s1}{s2}{s3}</>, save: true },
+    money: { title: "통장과 수입·지출", body: <>{s4}{s5}{s6}</>, save: true },
+    goal: { title: "저축 목표", body: s7, save: true },
+    look: {
+      title: "화면",
+      body: (
+        <>
+          <section className="card setup-sec">
+            <span className="step">이름</span>
+            {nameField}
+          </section>
+          <section className="card setup-sec">
+            <span className="step">메인 컬러</span>
+            <p className="hint">버튼, 탭, 위쪽 큰 카드 색이 바뀌어요. 한도 초과(빨강)처럼 뜻이 있는 색은 그대로예요.</p>
+            <div className="swatches" role="radiogroup" aria-label="메인 컬러">
+              {ACCENTS.map((a) => (
+                <button key={a.id} className="swatch" role="radio" aria-checked={accent === a.id} onClick={() => setAccent(a.id)}>
+                  <i style={{ background: a.sw }} aria-hidden="true" />
+                  {a.label}
+                </button>
+              ))}
+            </div>
+          </section>
+        </>
+      ),
+      save: true,
+    },
+    data: { title: "기록 보관", body: dataCard, save: false },
+  };
+  const page = PAGES[section];
+  if (page)
+    return (
+      <div className="view">
+        <PageHead title={page.title} fallback="setup" />
+        {page.body}
+        {page.save && saveArea}
+      </div>
+    );
+
+  const unread = unreadCount(NOTICES, readNoticeSeen());
+  const row = (key: string, title: string, desc: string, onClick: () => void, extra?: JSX.Element) => (
+    <button key={key} className="menu-row" onClick={onClick}>
+      <span className="mt">
+        <b>{title}</b>
+        {desc && <span>{desc}</span>}
+      </span>
+      <span className="chev" aria-hidden="true">
+        {extra}
+        {Icon.next}
+      </span>
+    </button>
+  );
+  return (
+    <div className="view">
+      <div className="page-head">
+        <h1>설정</h1>
+      </div>
+      <section className="card menu" aria-label="내 설정">
+        {row("budget", "생활비와 한도", "매달 " + cfg.cycleDay + "일 시작 · 생활비 " + man(cfg.total) + "원", () => go("setup/budget"))}
+        {row(
+          "money",
+          "통장과 수입·지출",
+          (typeof cfg.balance === "number" ? "통장 " + won(cfg.balance) : "통장 잔액 안 넣음") + " · 매달 나가는 돈 " + (cfg.fixed || []).length + "개",
+          () => go("setup/money"),
+        )}
+        {row(
+          "goal",
+          "저축 목표",
+          cfg.goalAmt && cfg.goalDate ? cfg.goalDate.slice(0, 4) + "년 " + Number(cfg.goalDate.slice(5, 7)) + "월까지 " + man(cfg.goalAmt) + "원" : "아직 안 정했어요",
+          () => go("setup/goal"),
+        )}
+        {row("look", "화면", (cfg.name || "이름 없음") + " · " + accentLabel(cfg.accent), () => go("setup/look"))}
+      </section>
+      <section className="card menu" aria-label="기록과 도움말">
+        {row("data", "기록 보관", "백업 저장·불러오기, 모든 기록 지우기", () => go("setup/data"))}
+        {row("notice", "공지사항", "", () => go("notice"), unread ? <span className="badge">{"새 소식 " + unread}</span> : undefined)}
+        {row("guide", "사용법 다시 보기", "", openGuide)}
+      </section>
     </div>
   );
 }

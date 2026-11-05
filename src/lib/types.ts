@@ -49,6 +49,8 @@ export interface Settings {
   goalAmt: number | null;
   goalDate: Key | null;
   firstStart: Key | null;
+  /** 메인 컬러 (설정 → 화면). 없으면 초록 */
+  accent?: string;
 }
 
 export interface Plan {

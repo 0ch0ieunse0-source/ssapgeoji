@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { applyAccent } from "./lib/theme";
 import { Onboarding } from "./components/Onboarding";
 import { Banner, Dock, PeriodNav, Toast, TopBar } from "./components/Shell";
 import { DaySheet } from "./sheets/DaySheet";
@@ -13,7 +14,9 @@ import { SaveView } from "./views/SaveView";
 import { SetupView } from "./views/SetupView";
 
 function Shell() {
-  const { model, route, entry, dayKey, formNonce } = useApp();
+  const { model, route, sub, entry, dayKey, formNonce } = useApp();
+  const accent = model?.cfg.accent;
+  useEffect(() => applyAccent(accent), [accent]);
   const sheetOpen = entry.open || !!dayKey;
   useEffect(() => {
     document.body.style.overflow = sheetOpen ? "hidden" : "";
@@ -26,7 +29,7 @@ function Shell() {
         <Banner />
         {model && (route === "home" || route === "ledger" || route === "save") && <PeriodNav />}
         <main style={{ display: "contents" }}>
-          {route === "setup" && <SetupView key={(model ? "edit" : "new") + formNonce} />}
+          {route === "setup" && <SetupView key={(model ? "edit" : "new") + formNonce + sub} section={sub} />}
           {model && route === "home" && <HomeView />}
           {model && route === "ledger" && <LedgerView />}
           {model && route === "save" && <SaveView />}

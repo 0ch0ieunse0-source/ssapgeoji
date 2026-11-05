@@ -3,7 +3,7 @@ import { BigWon, MoneyInput, SmallIco } from "../components/common";
 import { DOW, md, sd } from "../lib/date";
 import { fmt, parse, uid6, won } from "../lib/format";
 import { isNoSpend, limitOf, spentOf } from "../lib/ledger";
-import { movedIn, movesIn, savedDays, waitLeft } from "../lib/savings";
+import { movedIn, movesIn, savedDays, WAIT_OPTIONS, waitForPrice, waitLabel, waitLeft } from "../lib/savings";
 import type { Data, Wish } from "../lib/types";
 import { useApp, useModel } from "../state/app";
 
@@ -38,6 +38,11 @@ export function SaveView() {
   const [wName, setWName] = useState("");
   const [wPrice, setWPrice] = useState("");
   const [waitH, setWaitH] = useState(24);
+  const [waitManual, setWaitManual] = useState(false); // 직접 고르면 가격이 바뀌어도 그대로 둬요
+  const onPrice = (v: string) => {
+    setWPrice(v);
+    if (!waitManual) setWaitH(waitForPrice(parse(v)));
+  };
   const editWish = (fn: (w: Data["wish"]) => void) => update((d) => fn(d.wish));
   const items = S.wish.items;
   const order = { waiting: 0, skipped: 1, bought: 2 };
@@ -50,7 +55,9 @@ export function SaveView() {
     });
     setWName("");
     setWPrice("");
-    toast((waitH === 24 ? "하루" : "3일") + " 뒤에 다시 물어볼게요.");
+    setWaitH(24);
+    setWaitManual(false);
+    toast(waitLabel(waitH) + " 뒤에 다시 물어볼게요.");
   };
   const decide = (w: Wish, status: "skipped" | "bought") =>
     editWish((x) => {
@@ -157,20 +164,27 @@ export function SaveView() {
           </div>
           <div className="field" style={{ flex: "1 1 110px" }}>
             <label htmlFor="wPrice">가격</label>
-            <MoneyInput id="wPrice" value={wPrice} onValue={setWPrice} placeholder="0" />
+            <MoneyInput id="wPrice" value={wPrice} onValue={onPrice} placeholder="0" />
           </div>
         </div>
         <div className="lbl" id="waitLbl">
           얼마나 기다릴까요?
         </div>
-        <div className="seg" role="group" aria-labelledby="waitLbl">
-          <button aria-pressed={waitH === 24} onClick={() => setWaitH(24)}>
-            하루
-          </button>
-          <button aria-pressed={waitH === 72} onClick={() => setWaitH(72)}>
-            3일
-          </button>
+        <div className="seg seg-5" role="group" aria-labelledby="waitLbl">
+          {WAIT_OPTIONS.map((o) => (
+            <button
+              key={o.h}
+              aria-pressed={waitH === o.h}
+              onClick={() => {
+                setWaitH(o.h);
+                setWaitManual(true);
+              }}
+            >
+              {o.label}
+            </button>
+          ))}
         </div>
+        {parse(wPrice) > 0 && !waitManual && <p className="hint">가격에 맞춰 골라뒀어요. 더 길게 또는 짧게 바꿔도 돼요.</p>}
         <button className="btn" onClick={addWish}>
           대기 목록에 넣기
         </button>

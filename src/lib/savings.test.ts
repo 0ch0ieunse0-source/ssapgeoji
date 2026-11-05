@@ -58,3 +58,14 @@ describe("사고 싶은 것 대기 시간", () => {
     expect(waitLeft(w(24), 24 * H)).toBeNull();
   });
 });
+
+describe("가격에 맞춘 대기 기간", () => {
+  it("5만·30만·100만원 기준", async () => {
+    const { waitForPrice, waitLabel } = await import("./savings");
+    expect([0, 49999, 50000, 299999, 300000, 999999, 1000000, 5000000].map(waitForPrice)).toEqual([24, 24, 72, 72, 168, 168, 720, 720]);
+    expect([24, 72, 168, 336, 720].map(waitLabel)).toEqual(["하루", "3일", "1주", "2주", "1달"]);
+  });
+  it("1달 대기 남은 시간 글자", () => {
+    expect(waitLeft({ id: "w", name: "노트북", price: 1500000, wait: 720, addedAt: 0, status: "waiting" }, 3600000)).toBe("29일 23시간 남음");
+  });
+});

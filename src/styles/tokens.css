@@ -1,6 +1,6 @@
 /* 디자인 토큰: 프로토타입 :root 변수 그대로 (라이트·다크) */
 :root {
-  --bg: #f1f7f4; --surface: #ffffff; --surface-2: #e8f1ec; --ink: #18201c; --muted: #66716b; --line: #e0e7e3;
+  --bg: #f1f7f4; --surface: #ffffff; --surface-2: #e8f1ec; --ink: #18201c; --muted: #59635d; --line: #e0e7e3;
   --hero: #0a9a68; --hero-ink: #ffffff; --hero-muted: rgba(255,255,255,.76); --hero-track: rgba(255,255,255,.2); --hero-fill: #d2ffe8;
   --accent: #0a9a68; --accent-soft: #dcf7ea;
   --good: #1f8a5b; --good-soft: #e3f3ea; --warn: #b8741a; --warn-soft: #fbf0df; --over: #d03c30; --over-soft: #fbe8e5;
@@ -11,7 +11,7 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #101412; --surface: #19201c; --surface-2: #222b26; --ink: #e8eeea; --muted: #97a39c; --line: #2b3530;
+    --bg: #101412; --surface: #19201c; --surface-2: #222b26; --ink: #e8eeea; --muted: #a9b4ad; --line: #2b3530;
     --hero: #0d7a54; --hero-fill: #c4ffe1; --accent: #4fe0a3; --accent-soft: #163a2b;
     --good: #5fc391; --good-soft: #1d3328; --warn: #e3a55a; --warn-soft: #3a2e1d; --over: #ff8577; --over-soft: #3d2320;
     --c1: #f0925f; --c2: #c99b72; --c3: #6aaee8; --c4: #d78fcb; --c5: #f07fab; --c6: #a990ef; --c7: #a3a8b3;
@@ -20,10 +20,31 @@
   }
 }
 :root[data-theme="dark"] {
-  --bg: #101412; --surface: #19201c; --surface-2: #222b26; --ink: #e8eeea; --muted: #97a39c; --line: #2b3530;
+  --bg: #101412; --surface: #19201c; --surface-2: #222b26; --ink: #e8eeea; --muted: #a9b4ad; --line: #2b3530;
   --hero: #0d7a54; --hero-fill: #c4ffe1; --accent: #4fe0a3; --accent-soft: #163a2b;
   --good: #5fc391; --good-soft: #1d3328; --warn: #e3a55a; --warn-soft: #3a2e1d; --over: #ff8577; --over-soft: #3d2320;
   --c1: #f0925f; --c2: #c99b72; --c3: #6aaee8; --c4: #d78fcb; --c5: #f07fab; --c6: #a990ef; --c7: #a3a8b3;
   --shadow: none; --scrim: rgba(0,0,0,.6);
   color-scheme: dark;
 }
+
+/* 메인 컬러 (설정 → 화면). --accent-l·--accent-soft-l은 흰 배경용(안내 화면) 라이트 값이에요 */
+:root { --accent-l: #0a9a68; --accent-soft-l: #dcf7ea; }
+:root[data-accent="blue"] { --hero: #2f6bdb; --accent: #2f6bdb; --accent-soft: #e1ebfd; --hero-fill: #d9e6ff; --accent-l: #2f6bdb; --accent-soft-l: #e1ebfd; }
+@media (prefers-color-scheme: dark) { :root[data-accent="blue"]:not([data-theme="light"]) { --hero: #2856b0; --accent: #7aa7ff; --accent-soft: #1a2a4a; --hero-fill: #d6e3ff; } }
+:root[data-theme="dark"][data-accent="blue"] { --hero: #2856b0; --accent: #7aa7ff; --accent-soft: #1a2a4a; --hero-fill: #d6e3ff; }
+:root[data-accent="purple"] { --hero: #7650e0; --accent: #7650e0; --accent-soft: #ece6fd; --hero-fill: #e6dcff; --accent-l: #7650e0; --accent-soft-l: #ece6fd; }
+@media (prefers-color-scheme: dark) { :root[data-accent="purple"]:not([data-theme="light"]) { --hero: #5b3db8; --accent: #b49cff; --accent-soft: #2a2147; --hero-fill: #e4d9ff; } }
+:root[data-theme="dark"][data-accent="purple"] { --hero: #5b3db8; --accent: #b49cff; --accent-soft: #2a2147; --hero-fill: #e4d9ff; }
+:root[data-accent="pink"] { --hero: #d6406f; --accent: #d6406f; --accent-soft: #fce4ec; --hero-fill: #ffdbe7; --accent-l: #d6406f; --accent-soft-l: #fce4ec; }
+@media (prefers-color-scheme: dark) { :root[data-accent="pink"]:not([data-theme="light"]) { --hero: #a8325a; --accent: #ff8fb3; --accent-soft: #44202d; --hero-fill: #ffd6e4; } }
+:root[data-theme="dark"][data-accent="pink"] { --hero: #a8325a; --accent: #ff8fb3; --accent-soft: #44202d; --hero-fill: #ffd6e4; }
+:root[data-accent="orange"] { --hero: #c95a14; --accent: #c95a14; --accent-soft: #fdeadb; --hero-fill: #ffe2cc; --accent-l: #c95a14; --accent-soft-l: #fdeadb; }
+@media (prefers-color-scheme: dark) { :root[data-accent="orange"]:not([data-theme="light"]) { --hero: #9c4610; --accent: #ffab70; --accent-soft: #42291a; --hero-fill: #ffe0c9; } }
+:root[data-theme="dark"][data-accent="orange"] { --hero: #9c4610; --accent: #ffab70; --accent-soft: #42291a; --hero-fill: #ffe0c9; }
+:root[data-accent="gray"] { --hero: #69727d; --accent: #69727d; --accent-soft: #eceef1; --hero-fill: #eef1f4; --accent-l: #69727d; --accent-soft-l: #eceef1; }
+@media (prefers-color-scheme: dark) { :root[data-accent="gray"]:not([data-theme="light"]) { --hero: #4a525c; --accent: #b7c0ca; --accent-soft: #2a3036; --hero-fill: #e9edf1; } }
+:root[data-theme="dark"][data-accent="gray"] { --hero: #4a525c; --accent: #b7c0ca; --accent-soft: #2a3036; --hero-fill: #e9edf1; }
+:root[data-accent="black"] { --hero: #23282b; --accent: #23282b; --accent-soft: #e6e9ea; --hero-fill: #e9eef0; --accent-l: #23282b; --accent-soft-l: #e6e9ea; }
+@media (prefers-color-scheme: dark) { :root[data-accent="black"]:not([data-theme="light"]) { --hero: #33393d; --accent: #e6eaec; --accent-soft: #2b3235; --hero-fill: #f2f4f5; } }
+:root[data-theme="dark"][data-accent="black"] { --hero: #33393d; --accent: #e6eaec; --accent-soft: #2b3235; --hero-fill: #f2f4f5; }

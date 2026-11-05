@@ -43,11 +43,15 @@ interface AppValue {
   tick: number; // 1분마다 바뀌어요 (대기 목록 남은 시간)
   model: Model | null;
   route: ViewName;
+  /** "#setup/budget" 처럼 / 뒤에 붙은 하위 페이지 이름 */
+  sub: string;
+  /** 페이지의 뒤로가기: 앱 안에서 왔으면 이전 화면, 링크로 바로 왔으면 fallback */
+  goBack: (fallback: ViewName | string) => void;
   /** 데이터를 고치고 바로 저장해요 */
   update: (fn: (d: Data) => void) => void;
   replace: (d: Data) => void;
   setView: (p: Period | null) => void;
-  go: (v: ViewName | "") => void;
+  go: (v: ViewName | "" | `${ViewName}/${string}`) => void;
   toast: (text: string, err?: boolean) => void;
   toastState: { text: string; err: boolean; n: number } | null;
   entry: EntryState;
@@ -184,7 +188,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const go = useCallback((v: ViewName | "") => {
+  const navFromApp = useRef(false); // 앱 안에서 화면을 옮긴 적이 있는지 (뒤로가기용)
+  const go = useCallback((v: string) => {
+    navFromApp.current = true;
     location.hash = v;
     setHash(v);
     window.scrollTo(0, 0);
@@ -227,7 +233,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   }, [model, S.periods, today, update]);
 
-  const route: ViewName = !S.settings ? "setup" : VIEWS.includes(hash as ViewName) ? (hash as ViewName) : "home";
+  const [base, sub = ""] = hash.split("/");
+  const route: ViewName = !S.settings ? "setup" : VIEWS.includes(base as ViewName) ? (base as ViewName) : "home";
+  const goBack = useCallback(
+    (fallback: string) => {
+      if (navFromApp.current) history.back();
+      else go(fallback);
+    },
+    [go],
+  );
 
   const openEntry = useCallback(
     (k?: Key, pre?: EntryPreset) => {
@@ -249,7 +263,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const value: AppValue = {
-    S, storageOk, now, today, tick, model, route,
+    S, storageOk, now, today, tick, model, route, sub: S.settings ? sub : "", goBack,
     update, replace, setView: setViewP, go, toast, toastState,
     entry, openEntry, closeEntry, dayKey, openDay, closeDay, toggleNoSpend,
     formNonce, bumpForm: () => setFormNonce((n) => n + 1),
