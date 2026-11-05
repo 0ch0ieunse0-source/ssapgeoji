@@ -1,0 +1,29 @@
+/* 디자인 토큰: 프로토타입 :root 변수 그대로 (라이트·다크) */
+:root {
+  --bg: #f1f7f4; --surface: #ffffff; --surface-2: #e8f1ec; --ink: #18201c; --muted: #66716b; --line: #e0e7e3;
+  --hero: #0a9a68; --hero-ink: #ffffff; --hero-muted: rgba(255,255,255,.76); --hero-track: rgba(255,255,255,.2); --hero-fill: #d2ffe8;
+  --accent: #0a9a68; --accent-soft: #dcf7ea;
+  --good: #1f8a5b; --good-soft: #e3f3ea; --warn: #b8741a; --warn-soft: #fbf0df; --over: #d03c30; --over-soft: #fbe8e5;
+  --c1: #e5763f; --c2: #a8754a; --c3: #3a87cc; --c4: #8a3f7f; --c5: #d24f86; --c6: #7f62d0; --c7: #8a909c;
+  --shadow: 0 1px 2px rgba(30,20,40,.04), 0 6px 18px rgba(30,20,40,.06);
+  --scrim: rgba(20,14,24,.42);
+  --font: "Pretendard", "Pretendard Variable", "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101412; --surface: #19201c; --surface-2: #222b26; --ink: #e8eeea; --muted: #97a39c; --line: #2b3530;
+    --hero: #0d7a54; --hero-fill: #c4ffe1; --accent: #4fe0a3; --accent-soft: #163a2b;
+    --good: #5fc391; --good-soft: #1d3328; --warn: #e3a55a; --warn-soft: #3a2e1d; --over: #ff8577; --over-soft: #3d2320;
+    --c1: #f0925f; --c2: #c99b72; --c3: #6aaee8; --c4: #d78fcb; --c5: #f07fab; --c6: #a990ef; --c7: #a3a8b3;
+    --shadow: none; --scrim: rgba(0,0,0,.6);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101412; --surface: #19201c; --surface-2: #222b26; --ink: #e8eeea; --muted: #97a39c; --line: #2b3530;
+  --hero: #0d7a54; --hero-fill: #c4ffe1; --accent: #4fe0a3; --accent-soft: #163a2b;
+  --good: #5fc391; --good-soft: #1d3328; --warn: #e3a55a; --warn-soft: #3a2e1d; --over: #ff8577; --over-soft: #3d2320;
+  --c1: #f0925f; --c2: #c99b72; --c3: #6aaee8; --c4: #d78fcb; --c5: #f07fab; --c6: #a990ef; --c7: #a3a8b3;
+  --shadow: none; --scrim: rgba(0,0,0,.6);
+  color-scheme: dark;
+}

@@ -1,0 +1,193 @@
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { kOf, startOfToday } from "../lib/date";
+import { getDay, setDay } from "../lib/ledger";
+import { daysFor, makePlan, periodOf, planFor, shiftPeriod, weeksOf, type DayInfo } from "../lib/period";
+import { loadData, saveData } from "../lib/storage";
+import type { Data, Key, Period, Plan, Settings } from "../lib/types";
+
+export type ViewName = "home" | "ledger" | "save" | "flow" | "goal" | "setup";
+export const VIEWS: ViewName[] = ["home", "ledger", "save", "flow", "goal", "setup"];
+
+/** 설정이 끝난 뒤 화면에서 쓰는 값 (지금 보고 있는 달 기준) */
+export interface Model {
+  cfg: Settings;
+  cur: Period; // 오늘이 들어 있는 달
+  view: Period; // ‹ › 로 보고 있는 달
+  plan: Plan;
+  days: DayInfo[];
+  weeks: DayInfo[][];
+  isCur: boolean;
+  refKey: Key; // 홈에서 보여줄 날 (이번 달이면 오늘)
+  dayByKey: (k: Key) => DayInfo | undefined;
+}
+
+export interface EntryPreset {
+  amount?: number;
+  memo?: string;
+  cat?: string;
+}
+interface EntryState {
+  open: boolean;
+  day: Key;
+  pre?: EntryPreset;
+  nonce: number;
+}
+
+interface AppValue {
+  S: Data;
+  storageOk: boolean;
+  now: Date; // 오늘 0시
+  today: Key;
+  tick: number; // 1분마다 바뀌어요 (대기 목록 남은 시간)
+  model: Model | null;
+  route: ViewName;
+  /** 데이터를 고치고 바로 저장해요 */
+  update: (fn: (d: Data) => void) => void;
+  replace: (d: Data) => void;
+  setView: (p: Period | null) => void;
+  go: (v: ViewName | "") => void;
+  toast: (text: string, err?: boolean) => void;
+  toastState: { text: string; err: boolean; n: number } | null;
+  entry: EntryState;
+  openEntry: (k?: Key, pre?: EntryPreset) => void;
+  closeEntry: () => void;
+  dayKey: Key | null;
+  openDay: (k: Key) => void;
+  closeDay: () => void;
+  toggleNoSpend: (k: Key) => void;
+  formNonce: number;
+  bumpForm: () => void;
+}
+
+const Ctx = createContext<AppValue | null>(null);
+
+export function useApp() {
+  const v = useContext(Ctx);
+  if (!v) throw new Error("AppProvider 밖이에요");
+  return v;
+}
+export function useModel() {
+  const { model } = useApp();
+  if (!model) throw new Error("설정이 없어요");
+  return model;
+}
+
+const readHash = () => (typeof location === "undefined" ? "" : location.hash.slice(1));
+
+export function AppProvider({ children }: { children: ReactNode }) {
+  const [now] = useState(startOfToday);
+  const today = kOf(now);
+  const [init] = useState(() => loadData(today));
+  const [S, setS] = useState<Data>(init.data);
+  const [storageOk, setStorageOk] = useState(init.ok);
+  const sRef = useRef(S);
+  const [viewP, setViewP] = useState<Period | null>(null);
+  const [hash, setHash] = useState(readHash);
+  const [tick, setTick] = useState(0);
+  const [toastState, setToast] = useState<AppValue["toastState"]>(null);
+  const toastTimer = useRef<number>();
+  const [entry, setEntry] = useState<EntryState>({ open: false, day: today, nonce: 0 });
+  const [dayKey, setDayKey] = useState<Key | null>(null);
+  const [formNonce, setFormNonce] = useState(0);
+
+  const update = useCallback((fn: (d: Data) => void) => {
+    const next = structuredClone(sRef.current);
+    fn(next);
+    sRef.current = next;
+    setS(next);
+    setStorageOk(saveData(next));
+  }, []);
+  const replace = useCallback((d: Data) => {
+    sRef.current = d;
+    setS(d);
+    setStorageOk(saveData(d));
+  }, []);
+
+  const toast = useCallback((text: string, err = false) => {
+    setToast((t) => ({ text, err, n: (t?.n || 0) + 1 }));
+    window.clearTimeout(toastTimer.current);
+    toastTimer.current = window.setTimeout(() => setToast(null), 3200);
+  }, []);
+
+  useEffect(() => {
+    const f = () => setHash(readHash());
+    window.addEventListener("hashchange", f);
+    const iv = window.setInterval(() => setTick((t) => t + 1), 60000);
+    return () => {
+      window.removeEventListener("hashchange", f);
+      window.clearInterval(iv);
+    };
+  }, []);
+
+  const go = useCallback((v: ViewName | "") => {
+    location.hash = v;
+    setHash(v);
+    window.scrollTo(0, 0);
+  }, []);
+
+  const model = useMemo<Model | null>(() => {
+    const cfg = S.settings;
+    if (!cfg) return null;
+    const cd = cfg.cycleDay;
+    const cur = periodOf(today, cd);
+    let view = viewP;
+    if (!view || view.start > shiftPeriod(cur, 1, cd).start) view = cur;
+    const plan = planFor(S.periods, cfg, view);
+    const days = daysFor(view, plan, cfg.appts);
+    const isCur = view.start === cur.start;
+    return {
+      cfg,
+      cur,
+      view,
+      plan,
+      days,
+      weeks: weeksOf(days),
+      isCur,
+      refKey: isCur ? today : view.end < today ? view.end : view.start,
+      dayByKey: (k: Key) => days.find((d) => d.key === k),
+    };
+  }, [S, viewP, today]);
+
+  // 프로토타입처럼: 처음 시작한 달을 기억하고, 시작된 달의 한도 계획은 저장해 둬요 (나중에 설정을 바꿔도 지난 달은 그대로)
+  useEffect(() => {
+    if (!model) return;
+    const missing = [model.cur, model.view].filter((p, i, a) => a.findIndex((x) => x.start === p.start) === i && !S.periods[p.start] && p.start <= today);
+    if (model.cfg.firstStart && !missing.length) return;
+    update((d) => {
+      if (!d.settings) return;
+      if (!d.settings.firstStart) d.settings.firstStart = model.cur.start;
+      missing.forEach((p) => {
+        d.periods[p.start] = makePlan(d.settings!, p);
+      });
+    });
+  }, [model, S.periods, today, update]);
+
+  const route: ViewName = !S.settings ? "setup" : VIEWS.includes(hash as ViewName) ? (hash as ViewName) : "home";
+
+  const openEntry = useCallback(
+    (k?: Key, pre?: EntryPreset) => {
+      if (!model) return;
+      setEntry((e) => ({ open: true, day: k || model.refKey, pre, nonce: e.nonce + 1 }));
+    },
+    [model],
+  );
+  const closeEntry = useCallback(() => setEntry((e) => ({ ...e, open: false })), []);
+  const openDay = useCallback((k: Key) => setDayKey(k), []);
+  const closeDay = useCallback(() => setDayKey(null), []);
+  const toggleNoSpend = useCallback(
+    (k: Key) => {
+      const on = !getDay(sRef.current.days, k).noSpend;
+      update((d) => setDay(d.days, k, { noSpend: on }));
+      toast(on ? "무지출로 표시했어요." : "무지출 표시를 지웠어요.");
+    },
+    [update, toast],
+  );
+
+  const value: AppValue = {
+    S, storageOk, now, today, tick, model, route,
+    update, replace, setView: setViewP, go, toast, toastState,
+    entry, openEntry, closeEntry, dayKey, openDay, closeDay, toggleNoSpend,
+    formNonce, bumpForm: () => setFormNonce((n) => n + 1),
+  };
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+}
