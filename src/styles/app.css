@@ -276,10 +276,11 @@ body { padding-top: calc(18px + env(safe-area-inset-top, 0px)); }
 .onb-dots { display: flex; justify-content: center; gap: 6px; }
 .onb-dots i { width: 7px; height: 7px; border-radius: 99px; background: var(--line); transition: width .2s; }
 .onb-dots i.on { width: 20px; background: var(--accent); }
-.onb-actions { display: flex; flex-direction: column; gap: 8px; }
-.onb-actions:has(> .btn.line + .btn) { flex-direction: row; }
-.onb-actions > .btn { flex: none; height: 52px; padding-block: 0; }
-.onb-actions:has(> .btn.line + .btn) > .btn { flex: 1; }
+/* 수정: 아래 버튼 — 예전 아이폰 Safari도 같게 보이도록 :has 대신 클래스로, 줄어들지 않게 */
+.onb-text, .onb-dots, .onb-top { flex: none; }
+.onb-actions { flex: none; display: grid; grid-template-columns: 1fr; gap: 8px; }
+.onb-actions.two { grid-template-columns: 1fr 2fr; }
+.onb-actions > .btn { min-height: 52px; height: auto; padding: 14px 16px; display: flex; align-items: center; justify-content: center; }
 .onb-a { display: flex; align-items: center; justify-content: center; text-decoration: none; }
 .onb-text .alert { margin: 0; }
 

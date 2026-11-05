@@ -210,7 +210,7 @@ export function Onboarding() {
             ))}
           </div>
         )}
-        <div className="onb-actions">
+        <div className={"onb-actions" + (i > 0 && !last ? " two" : "")}>
           {i > 0 && !last && (
             <button className="btn line" onClick={() => setI(i - 1)}>
               이전
