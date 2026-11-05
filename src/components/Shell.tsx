@@ -48,21 +48,13 @@ export function Banner() {
 }
 
 export function PeriodNav() {
-  const { model, setView, toast } = useApp();
+  const { model, setView, shiftView } = useApp();
   if (!model) return null;
   const { view, cur, cfg, isCur } = model;
   const cd = cfg.cycleDay;
   const prevBlocked = !!(cfg.firstStart && shiftPeriod(view, -1, cd).end < cfg.firstStart);
-  const prev = () => {
-    const p = shiftPeriod(view, -1, cd);
-    if (cfg.firstStart && p.end < cfg.firstStart) return toast("더 이전 기록은 없어요.");
-    setView(p);
-  };
-  const next = () => {
-    const p = shiftPeriod(view, 1, cd);
-    if (p.start > shiftPeriod(cur, 1, cd).start) return toast("다음 달까지만 미리 볼 수 있어요.");
-    setView(p);
-  };
+  const prev = () => shiftView(-1);
+  const next = () => shiftView(1);
   return (
     <div className="pnav">
       <button className="pbtn" aria-label="이전 달" disabled={prevBlocked} onClick={prev}>
@@ -71,6 +63,11 @@ export function PeriodNav() {
       <div className="pmid" aria-live="polite">
         <b>{sd(view.start) + " ~ " + sd(view.end)}</b>
         <span className={isCur ? "badge" : "badge warn"}>{isCur ? "이번 달" : view.start < cur.start ? "지난 달" : "다음 달 미리 보기"}</span>
+        {!isCur && (
+          <button className="today-btn" onClick={() => setView(null)}>
+            오늘
+          </button>
+        )}
       </div>
       <button className="pbtn" aria-label="다음 달" disabled={view.start > cur.start} onClick={next}>
         {Icon.next}

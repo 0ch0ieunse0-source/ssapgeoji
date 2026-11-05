@@ -8,7 +8,6 @@ import { getDay, isNoSpend, limitOf, mineOf, setDay, spentOf } from "../lib/ledg
 import { roundsLabel } from "../lib/split";
 import { tripSpent } from "../lib/trip";
 import { useApp } from "../state/app";
-import { ApptSheet, type ApptTarget } from "./ApptSheet";
 
 const dday = (k: string, today: string) => {
   const n = Math.round((dOf(k).getTime() - dOf(today).getTime()) / 86400000);
@@ -17,11 +16,10 @@ const dday = (k: string, today: string) => {
 
 /** 그날 카드 (달력 가운데): 내역, 남은 한도, + 이날 쓴 돈 추가, ⋯(한도 바꾸기·무지출·약속) */
 export function DaySheet() {
-  const { S, today, dayKey, closeDay, model, update, toast, openEntry, toggleNoSpend } = useApp();
+  const { S, today, dayKey, closeDay, model, update, toast, openEntry, toggleNoSpend, openAppt } = useApp();
   const d = model && dayKey ? model.dayByKey(dayKey) : undefined;
   const [limitV, setLimitV] = useState("");
   const [more, setMore] = useState(false);
-  const [appt, setAppt] = useState<ApptTarget>(null);
   const limRef = useRef<HTMLInputElement>(null);
   const l = d ? limitOf(S.days, d) : 0;
 
@@ -160,7 +158,11 @@ export function DaySheet() {
               ＋ 이날 쓴 돈 추가
             </button>
           )}
-          <button className={"dc-appt" + (trip ? " trip" : "")} onClick={() => setAppt({ day: d.key, mode: trip ? "trip" : isAppt ? "appt" : "new", trip })}>
+          <button className={"dc-appt" + (trip ? " trip" : "")} onClick={() => openAppt({ day: d.key, mode: trip ? "trip" : isAppt ? "appt" : "new", trip })}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <rect x="4" y="5" width="16" height="15" rx="3" />
+              <path d="M4 10h16M9 3v4M15 3v4" />
+            </svg>
             {trip ? "여행 수정" : isAppt ? "약속 수정" : "약속 추가"}
           </button>
         </div>
@@ -169,11 +171,8 @@ export function DaySheet() {
   })();
 
   return (
-    <>
-      <Sheet open={!!d} onClose={closeDay} labelledBy="dayTitle" center>
-        {content}
-      </Sheet>
-      {model && <ApptSheet target={appt} onClose={() => setAppt(null)} />}
-    </>
+    <Sheet open={!!d} onClose={closeDay} labelledBy="dayTitle" center>
+      {content}
+    </Sheet>
   );
 }

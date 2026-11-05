@@ -1,4 +1,4 @@
-import { Fragment } from "react";
+import { Fragment, useRef } from "react";
 import { TxRow } from "../components/common";
 import { addDays, dOf, DOW, md, sd } from "../lib/date";
 import { short, won } from "../lib/format";
@@ -7,7 +7,44 @@ import { tripSpent } from "../lib/trip";
 import { useApp, useModel } from "../state/app";
 
 export function LedgerView() {
-  const { S, today, openDay } = useApp();
+  const { S, today, openDay, openAppt, shiftView, slideDir } = useApp();
+  // 밀어서 달 넘기기 · 길게 눌러 약속 추가
+  const touch = useRef<{ x: number; y: number; t: number; key: string | null; timer: number } | null>(null);
+  const suppress = useRef(false);
+  const onDown = (e: React.PointerEvent, key: string | null) => {
+    suppress.current = false;
+    const timer = key
+      ? window.setTimeout(() => {
+          suppress.current = true;
+          navigator.vibrate?.(10);
+          const info = dayByKey(key);
+          if (info) openAppt({ day: key, mode: info.trip ? "trip" : info.tag === "약속" ? "appt" : "new", trip: info.trip });
+        }, 550)
+      : 0;
+    touch.current = { x: e.clientX, y: e.clientY, t: Date.now(), key, timer };
+  };
+  const onMove = (e: React.PointerEvent) => {
+    const t = touch.current;
+    if (t && (Math.abs(e.clientX - t.x) > 10 || Math.abs(e.clientY - t.y) > 10)) window.clearTimeout(t.timer);
+  };
+  const onUp = (e: React.PointerEvent) => {
+    const t = touch.current;
+    touch.current = null;
+    if (!t) return;
+    window.clearTimeout(t.timer);
+    const dx = e.clientX - t.x, dy = e.clientY - t.y;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      suppress.current = true;
+      shiftView(dx < 0 ? 1 : -1);
+    }
+  };
+  const tap = (key: string) => {
+    if (suppress.current) {
+      suppress.current = false;
+      return;
+    }
+    openDay(key);
+  };
   const { days, weeks, view, dayByKey, L, cfg } = useModel();
   const nm = (k: string) => cfg.apptNames?.[k];
   const D = L; // 생활비 계산용
@@ -45,7 +82,9 @@ export function LedgerView() {
           md(d) + (t ? " " + t.name + ", 쓴 돈 " + won(s) + (over ? ", 여행 예산 초과" : "") : (isAppt ? " " + (nm(k) || "약속") : "") + " 한도 " + won(l) + ", 쓴 돈 " + won(s) + (ns ? ", 무지출" : "") + (over ? ", 한도 초과" : ""))
         }
         aria-current={k === today ? "date" : undefined}
-        onClick={() => openDay(info.key)}
+        onClick={() => tap(info.key)}
+        onPointerDown={(e) => onDown(e, info.key)}
+        onContextMenu={(e) => e.preventDefault()}
       >
         <span className="n">{label}</span>
         <span className={"s" + (s || ns ? "" : " zero")}>{s ? "-" + short(s) : ns ? "무지출" : t ? "" : short(l)}</span>
@@ -72,7 +111,14 @@ export function LedgerView() {
           <h2>{md(dOf(view.start)) + " ~ " + md(dOf(view.end))}</h2>
           <span className="k">{won(sp) + " / " + won(lim)}</span>
         </div>
-        <div className="cal">
+        <div
+          className={"cal" + (slideDir ? " cal-slide-" + slideDir : "")}
+          key={view.start}
+          onPointerMove={onMove}
+          onPointerUp={onUp}
+          onPointerCancel={() => touch.current && window.clearTimeout(touch.current.timer)}
+          onPointerDown={(e) => !touch.current && onDown(e, null)}
+        >
           {["월", "화", "수", "목", "금", "토", "일"].map((t, i) => (
             <div key={t} className={"dw" + (i === 6 ? " sun" : i === 5 ? " sat" : "")} aria-hidden="true">
               {t}
@@ -90,6 +136,7 @@ export function LedgerView() {
             한도 초과
           </span>
           <span style={{ color: "var(--good)" }}>무지출</span>
+          <span>날짜를 길게 누르면 약속 추가</span>
           {tripsHere.length > 0 && (
             <span>
               <i className="t-sw" />

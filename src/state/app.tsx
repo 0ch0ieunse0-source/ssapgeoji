@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { detectBrowser } from "../lib/browser";
 import { hasNoticeRecord, markAllNoticesRead } from "../notices";
+import type { ApptTarget } from "../sheets/ApptSheet";
 import { kOf, startOfToday } from "../lib/date";
 import { getDay, setDay } from "../lib/ledger";
 import { daysFor, makePlan, periodOf, planFor, shiftPeriod, weeksOf, type DayInfo } from "../lib/period";
@@ -64,6 +65,13 @@ interface AppValue {
   openDay: (k: Key) => void;
   closeDay: () => void;
   toggleNoSpend: (k: Key) => void;
+  /** 지난달(-1)·다음 달(+1)로. 막히면 알려줘요 */
+  shiftView: (dir: -1 | 1) => void;
+  /** 마지막으로 넘긴 방향 (달력 넘김 효과용) */
+  slideDir: -1 | 0 | 1;
+  /** 약속·여행 추가·수정 창 */
+  appt: ApptTarget;
+  openAppt: (t: ApptTarget) => void;
   formNonce: number;
   bumpForm: () => void;
   guide: { open: boolean; safariOnly: boolean };
@@ -256,6 +264,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
   const closeEntry = useCallback(() => setEntry((e) => ({ ...e, open: false })), []);
   const openDay = useCallback((k: Key) => setDayKey(k), []);
+  const [appt, setAppt] = useState<ApptTarget>(null);
+  const [slideDir, setSlideDir] = useState<-1 | 0 | 1>(0);
+  const shiftView = useCallback(
+    (dir: -1 | 1) => {
+      if (!model) return;
+      const { view, cur, cfg } = model;
+      const cd = cfg.cycleDay;
+      const p = shiftPeriod(view, dir, cd);
+      if (dir < 0 && cfg.firstStart && p.end < cfg.firstStart) return toast("더 이전 기록은 없어요.");
+      if (dir > 0 && p.start > shiftPeriod(cur, 1, cd).start) return toast("다음 달까지만 미리 볼 수 있어요.");
+      setSlideDir(dir);
+      setViewP(p);
+    },
+    [model, toast],
+  );
   const closeDay = useCallback(() => setDayKey(null), []);
   const toggleNoSpend = useCallback(
     (k: Key) => {
@@ -268,7 +291,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const value: AppValue = {
     S, storageOk, now, today, tick, model, route, sub: S.settings ? sub : "", goBack,
-    update, replace, setView: setViewP, go, toast, toastState,
+    update, replace, go, toast, toastState,
+    setView: (p: Period | null) => {
+      setSlideDir(0);
+      setViewP(p);
+    },
+    shiftView, slideDir, appt, openAppt: setAppt,
     entry, openEntry, closeEntry, dayKey, openDay, closeDay, toggleNoSpend,
     formNonce, bumpForm: () => setFormNonce((n) => n + 1),
     guide, openGuide, closeGuide, markGuideSeen,

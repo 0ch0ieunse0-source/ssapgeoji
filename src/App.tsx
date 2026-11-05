@@ -4,6 +4,7 @@ import { Onboarding } from "./components/Onboarding";
 import { UpdateToast } from "./components/UpdateToast";
 import { Banner, Dock, PeriodNav, Toast, TopBar } from "./components/Shell";
 import { DaySheet } from "./sheets/DaySheet";
+import { ApptSheet } from "./sheets/ApptSheet";
 import { EntrySheet } from "./sheets/EntrySheet";
 import { AppProvider, useApp } from "./state/app";
 import { FlowView } from "./views/FlowView";
@@ -16,7 +17,7 @@ import { SaveView } from "./views/SaveView";
 import { SetupView } from "./views/SetupView";
 
 function Shell() {
-  const { model, route, sub, entry, dayKey, formNonce } = useApp();
+  const { model, route, sub, entry, dayKey, formNonce, appt, openAppt } = useApp();
   const accent = model?.cfg.accent;
   useEffect(() => applyAccent(accent), [accent]);
   const sheetOpen = entry.open || !!dayKey;
@@ -44,6 +45,7 @@ function Shell() {
       </div>
       {model && <Dock />}
       <DaySheet />
+      {model && <ApptSheet target={appt} onClose={() => openAppt(null)} />}
       <EntrySheet />
       <Onboarding />
       <UpdateToast />

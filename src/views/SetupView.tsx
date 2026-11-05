@@ -27,6 +27,8 @@ export function SetupView({ section = "" }: { section?: string }) {
   const [apptLimit, setApptLimit] = useState(fmt(c.apptLimit));
   const [appts, setAppts] = useState<string[]>(() => (c.appts || []).filter((k) => k >= periodOf(today, c.cycleDay || 1).start));
   const [apptDate, setApptDate] = useState("");
+  const [apptName, setApptName] = useState("");
+  const [apptNames, setApptNames] = useState<Record<string, string>>(() => ({ ...(c.apptNames || {}) }));
   const [trips, setTrips] = useState<Trip[]>(() => (c.trips || []).filter((t) => t.end >= periodOf(today, c.cycleDay || 1).start).map((t) => ({ ...t })));
   const [tName, setTName] = useState("");
   const [tStart, setTStart] = useState("");
@@ -83,7 +85,15 @@ export function SetupView({ section = "" }: { section?: string }) {
     if (!k) return;
     if (k < p.start || k > nx.end) return toast("이번 달이나 다음 달 날짜를 골라주세요.", true);
     if (!appts.includes(k)) setAppts([...appts, k]);
+    const nm = apptName.trim();
+    setApptNames((m) => {
+      const next = { ...m };
+      if (nm) next[k] = nm;
+      else delete next[k];
+      return next;
+    });
     setApptDate("");
+    setApptName("");
   };
   const addTrip = () => {
     const budget = parse(tBudget);
@@ -131,7 +141,9 @@ export function SetupView({ section = "" }: { section?: string }) {
         weekend: weN,
         appts: oldAppts.concat(appts),
         trips: (prev?.trips || []).filter((t) => t.end < curStart).concat(trips),
-        apptNames: Object.fromEntries(Object.entries(prev?.apptNames || {}).filter(([k]) => oldAppts.includes(k) || appts.includes(k))),
+        apptNames: Object.fromEntries(
+          Object.entries({ ...(prev?.apptNames || {}), ...apptNames }).filter(([k, v]) => v && (oldAppts.includes(k) || appts.includes(k))),
+        ),
         apptLimit: apl,
         balance: balanceN,
         balanceDate: balanceN == null ? null : balanceChanged ? today : prev!.balanceDate,
@@ -257,6 +269,10 @@ export function SetupView({ section = "" }: { section?: string }) {
       <section className="card setup-sec">
         <span className="step">{step(2, "약속과 여행")}</span>
         <p className="hint">약속 있는 날은 한도를 더 크게 잡아요. 가계부 달력에서 날짜를 눌러 약속 날로 표시해도 돼요.</p>
+        <div className="field">
+          <label htmlFor="cApptName">어떤 약속이에요? (선택)</label>
+          <input id="cApptName" maxLength={14} placeholder="예: 민지 생일" value={apptName} onChange={(e) => setApptName(e.target.value)} />
+        </div>
         <div className="row">
           <div className="field" style={{ flex: "2 1 150px" }}>
             <label htmlFor="cApptDate">날짜</label>
@@ -272,7 +288,7 @@ export function SetupView({ section = "" }: { section?: string }) {
             .sort()
             .map((k) => (
               <span key={k} className="chip">
-                {sd(k) + " (" + DOW[dOf(k).getDay()] + ")" + (c.apptNames?.[k] ? " " + c.apptNames[k] : "")}
+                {sd(k) + " (" + DOW[dOf(k).getDay()] + ")" + (apptNames[k] ? " " + apptNames[k] : "")}
                 <button className="rm" aria-label={sd(k) + " 약속 지우기"} onClick={() => setAppts(appts.filter((x) => x !== k))}>
                   ✕
                 </button>
