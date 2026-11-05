@@ -1,4 +1,5 @@
 // localStorage "aggim-v1"에 저장되는 데이터 구조 (프로토타입과 같아요)
+// 앱 이름이 거지노트로 바뀌었지만, 기존 기록이 남도록 저장 이름은 그대로 둬요.
 
 export type Key = string; // "YYYY-MM-DD"
 export type Pay = "check" | "card";

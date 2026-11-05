@@ -1,6 +1,6 @@
 {
-  "name": "아낌노트",
-  "short_name": "아낌노트",
+  "name": "거지노트",
+  "short_name": "거지노트",
   "description": "내 생활비, 하루 단위로 지키기. 기록은 내 브라우저에만 저장돼요.",
   "lang": "ko",
   "start_url": "./",

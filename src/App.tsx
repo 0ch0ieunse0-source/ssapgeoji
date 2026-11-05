@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { Onboarding } from "./components/Onboarding";
 import { Banner, Dock, PeriodNav, Toast, TopBar } from "./components/Shell";
 import { DaySheet } from "./sheets/DaySheet";
 import { EntrySheet } from "./sheets/EntrySheet";
@@ -36,6 +37,7 @@ function Shell() {
       {model && <Dock />}
       <DaySheet />
       <EntrySheet />
+      <Onboarding />
       <Toast />
     </>
   );

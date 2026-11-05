@@ -11,7 +11,7 @@ const DEFAULTS: Partial<Settings> = { cycleDay: 1, total: 400000, apptLimit: 300
 const intOrNull = (s: string) => parseInt(s, 10) || null;
 
 export function SetupView() {
-  const { S, today, update, replace, setView, toast, go, bumpForm } = useApp();
+  const { S, today, update, replace, setView, toast, go, bumpForm, openGuide } = useApp();
   const cfg = S.settings;
   const c = cfg || DEFAULTS;
 
@@ -135,7 +135,7 @@ export function SetupView() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "아낌노트-백업-" + today + ".json";
+      a.download = "거지노트-백업-" + today + ".json";
       document.body.append(a);
       a.click();
       a.remove();
@@ -157,7 +157,7 @@ export function SetupView() {
         const n = Object.values(data.days).reduce((s, d) => s + ((d && d.items) || []).length, 0);
         setPending({ data, text: "매달 " + data.settings.cycleDay + "일 시작 · 기록 " + n + "건. 불러오면 지금 기록은 이 백업으로 바뀌어요." });
       } catch {
-        toast("아낌노트 백업 파일이 아니에요.", true);
+        toast("거지노트 백업 파일이 아니에요.", true);
       }
       input.value = "";
     };
@@ -396,6 +396,9 @@ export function SetupView() {
           </button>
         </section>
       )}
+      <button className="link" style={{ alignSelf: "center" }} onClick={openGuide}>
+        사용법 다시 보기
+      </button>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { detectBrowser } from "../lib/browser";
 import { kOf, startOfToday } from "../lib/date";
 import { getDay, setDay } from "../lib/ledger";
 import { daysFor, makePlan, periodOf, planFor, shiftPeriod, weeksOf, type DayInfo } from "../lib/period";
@@ -57,6 +58,33 @@ interface AppValue {
   toggleNoSpend: (k: Key) => void;
   formNonce: number;
   bumpForm: () => void;
+  guide: { open: boolean; safariOnly: boolean };
+  openGuide: () => void;
+  closeGuide: () => void;
+}
+
+const ONBOARD_KEY = "ssapgeoji-onboarded";
+const INAPP_OK_KEY = "ssapgeoji-inapp-ok";
+const safeGet = (st: () => Storage, k: string) => {
+  try {
+    return st().getItem(k);
+  } catch {
+    return null;
+  }
+};
+const safeSet = (st: () => Storage, k: string) => {
+  try {
+    st().setItem(k, "1");
+  } catch {
+    /* 저장이 막힌 브라우저면 다음에 다시 보여줘요 */
+  }
+};
+function initialGuide() {
+  if (typeof window === "undefined") return { open: false, safariOnly: false };
+  const seen = safeGet(() => localStorage, ONBOARD_KEY) === "1";
+  const inApp = !!detectBrowser(navigator.userAgent).inApp;
+  const inAppOk = safeGet(() => sessionStorage, INAPP_OK_KEY) === "1";
+  return { open: !seen || (inApp && !inAppOk), safariOnly: seen && inApp };
 }
 
 const Ctx = createContext<AppValue | null>(null);
@@ -89,6 +117,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [entry, setEntry] = useState<EntryState>({ open: false, day: today, nonce: 0 });
   const [dayKey, setDayKey] = useState<Key | null>(null);
   const [formNonce, setFormNonce] = useState(0);
+  const [guide, setGuide] = useState(initialGuide);
+  const openGuide = useCallback(() => setGuide({ open: true, safariOnly: false }), []);
+  const closeGuide = useCallback(() => {
+    safeSet(() => localStorage, ONBOARD_KEY);
+    if (detectBrowser(navigator.userAgent).inApp) safeSet(() => sessionStorage, INAPP_OK_KEY);
+    setGuide({ open: false, safariOnly: false });
+  }, []);
 
   const update = useCallback((fn: (d: Data) => void) => {
     const next = structuredClone(sRef.current);
@@ -188,6 +223,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     update, replace, setView: setViewP, go, toast, toastState,
     entry, openEntry, closeEntry, dayKey, openDay, closeDay, toggleNoSpend,
     formNonce, bumpForm: () => setFormNonce((n) => n + 1),
+    guide, openGuide, closeGuide,
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

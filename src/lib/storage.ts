@@ -1,6 +1,7 @@
 import { dOf } from "./date";
 import type { Data, Key, Settings } from "./types";
 
+// 앱 이름이 바뀌어도 기존 기록을 그대로 읽도록 예전 이름을 유지해요. 바꾸면 모두의 기록이 사라진 것처럼 보여요.
 export const STORAGE_KEY = "aggim-v1";
 
 export const EMPTY = (): Data => ({

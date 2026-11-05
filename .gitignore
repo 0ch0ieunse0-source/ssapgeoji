@@ -12,9 +12,10 @@ coverage/
 *.pem
 *.key
 
-# 개인 정보: 아낌노트 백업 파일에는 내 가계부 기록이 들어 있어요
+# 개인 정보: 거지노트 백업 파일에는 내 가계부 기록이 들어 있어요
 *백업*.json
 aggim*backup*.json
+ssapgeoji*backup*.json
 
 # 로그와 운영체제·편집기 파일
 *.log

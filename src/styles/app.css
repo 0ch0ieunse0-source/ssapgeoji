@@ -253,3 +253,29 @@ body { padding-top: calc(18px + env(safe-area-inset-top, 0px)); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
+
+/* 추가: 처음 사용법 + Safari 안내 (기존 토큰만 사용) */
+.onb { position: fixed; inset: 0; z-index: 50; background: var(--bg); overflow-y: auto;
+  padding: calc(18px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) calc(20px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.onb-in { max-width: 460px; min-height: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+.onb-top { display: flex; justify-content: space-between; align-items: center; min-height: 32px; }
+.onb-art { flex: 1 0 200px; display: grid; place-items: center; }
+.onb-mascot { background: #ffffff; border-radius: 28px; padding: 20px 28px; box-shadow: var(--shadow); }
+.onb-mascot img { display: block; width: 200px; height: auto; }
+.onb-ico { width: 112px; height: 112px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; }
+.onb-ico svg { width: 52px; height: 52px; }
+.onb-text { display: flex; flex-direction: column; gap: 10px; }
+.onb-text h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; text-wrap: balance; }
+.onb-text h2:focus { outline: none; }
+.onb-text p { margin: 0; color: var(--muted); font-size: 15px; }
+.onb-steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 8px; font-size: 15px; }
+.onb-steps .link { padding: 0; }
+.onb-dots { display: flex; justify-content: center; gap: 6px; }
+.onb-dots i { width: 7px; height: 7px; border-radius: 99px; background: var(--line); transition: width .2s; }
+.onb-dots i.on { width: 20px; background: var(--accent); }
+.onb-actions { display: flex; flex-direction: column; gap: 8px; }
+.onb-actions:has(> .btn.line + .btn) { flex-direction: row; }
+.onb-actions > .btn { flex: none; height: 52px; padding-block: 0; }
+.onb-actions:has(> .btn.line + .btn) > .btn { flex: 1; }
+.onb-a { display: flex; align-items: center; justify-content: center; text-decoration: none; }
+.onb-text .alert { margin: 0; }
