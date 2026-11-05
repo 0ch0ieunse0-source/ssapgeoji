@@ -61,6 +61,8 @@ interface AppValue {
   guide: { open: boolean; safariOnly: boolean };
   openGuide: () => void;
   closeGuide: () => void;
+  /** 사용법 마지막 장까지 봤으면(건너뛰기 포함) 다시 안 보여줘요 */
+  markGuideSeen: () => void;
 }
 
 const ONBOARD_KEY = "ssapgeoji-onboarded";
@@ -81,7 +83,11 @@ const safeSet = (st: () => Storage, k: string) => {
 };
 function initialGuide() {
   if (typeof window === "undefined") return { open: false, safariOnly: false };
-  const seen = safeGet(() => localStorage, ONBOARD_KEY) === "1";
+  // 홈 화면 아이콘으로 열었으면 이미 Safari에서 사용법을 본 사람이라 다시 보여주지 않아요
+  // (아이폰은 Safari와 홈 화면 앱의 저장 공간이 따로라 표시가 안 넘어가요)
+  const standalone =
+    window.matchMedia?.("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+  const seen = standalone || safeGet(() => localStorage, ONBOARD_KEY) === "1";
   const inApp = !!detectBrowser(navigator.userAgent).inApp;
   const inAppOk = safeGet(() => sessionStorage, INAPP_OK_KEY) === "1";
   return { open: !seen || (inApp && !inAppOk), safariOnly: seen && inApp };
@@ -119,6 +125,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [formNonce, setFormNonce] = useState(0);
   const [guide, setGuide] = useState(initialGuide);
   const openGuide = useCallback(() => setGuide({ open: true, safariOnly: false }), []);
+  const markGuideSeen = useCallback(() => safeSet(() => localStorage, ONBOARD_KEY), []);
   const closeGuide = useCallback(() => {
     safeSet(() => localStorage, ONBOARD_KEY);
     if (detectBrowser(navigator.userAgent).inApp) safeSet(() => sessionStorage, INAPP_OK_KEY);
@@ -223,7 +230,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     update, replace, setView: setViewP, go, toast, toastState,
     entry, openEntry, closeEntry, dayKey, openDay, closeDay, toggleNoSpend,
     formNonce, bumpForm: () => setFormNonce((n) => n + 1),
-    guide, openGuide, closeGuide,
+    guide, openGuide, closeGuide, markGuideSeen,
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

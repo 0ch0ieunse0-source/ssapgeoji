@@ -126,7 +126,7 @@ function SafariGuide({ env, onCopy }: { env: BrowserEnv; onCopy: () => void }) {
 
 /** 처음 열 때 보여주는 사용법과 Safari 안내. 다른 앱 안에서 열리면 Safari 안내를 매번 보여줘요. */
 export function Onboarding() {
-  const { guide, closeGuide, toast } = useApp();
+  const { guide, closeGuide, markGuideSeen, toast } = useApp();
   const env = useMemo(
     () =>
       detectBrowser(
@@ -146,6 +146,10 @@ export function Onboarding() {
   useEffect(() => {
     if (guide.open) headRef.current?.focus();
   }, [guide.open, i]);
+  useEffect(() => {
+    // 마지막 장(Safari 안내)에 닿으면 튜토리얼을 끝낸 걸로 저장해요. 시작하기를 안 누르고 나가도 다시 안 떠요.
+    if (guide.open && i === SLIDES.length) markGuideSeen();
+  }, [guide.open, i, markGuideSeen]);
   useEffect(() => {
     if (!guide.open) return;
     document.body.style.overflow = "hidden";
