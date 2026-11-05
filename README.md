@@ -81,3 +81,11 @@ src/
   styles/       tokens.css(색·글꼴 디자인 토큰, 라이트·다크) + app.css
 public/         manifest.json, 앱 아이콘
 ```
+
+## 친구 랭킹 (Supabase) 연결하기
+
+랭킹에는 닉네임·지킴률·등급·파산 여부만 올라가요. 금액과 가계부 기록은 올라가지 않아요.
+
+1. [supabase.com](https://supabase.com)에 GitHub로 로그인 → **New project**
+2. **SQL Editor**에 `supabase/ranking.sql` 내용을 붙여 넣고 **Run**
+3. **Project Settings → API**의 Project URL과 anon public key를 `src/rankConfig.ts`에 넣고 배포

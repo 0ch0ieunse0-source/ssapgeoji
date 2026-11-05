@@ -1,5 +1,6 @@
 import { BigWon, SmallIco, TxRow, Won } from "../components/common";
 import { Donut } from "../components/Donut";
+import { RankCard } from "../components/RankCard";
 import { catVar } from "../lib/cats";
 import { DOW, md, sd } from "../lib/date";
 import { flowAmount, flowItems } from "../lib/flow";
@@ -119,6 +120,8 @@ export function HomeView() {
           </div>
         )}
       </section>
+
+      <RankCard />
 
       <section className="card" aria-label="소비 리포트">
         <div className="card-head">

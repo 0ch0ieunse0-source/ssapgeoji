@@ -7,8 +7,8 @@ import { daysFor, makePlan, periodOf, planFor, shiftPeriod, weeksOf, type DayInf
 import { loadData, saveData } from "../lib/storage";
 import type { Data, Key, Period, Plan, Settings } from "../lib/types";
 
-export type ViewName = "home" | "ledger" | "save" | "flow" | "goal" | "setup" | "notice";
-export const VIEWS: ViewName[] = ["home", "ledger", "save", "flow", "goal", "setup", "notice"];
+export type ViewName = "home" | "ledger" | "save" | "flow" | "goal" | "setup" | "notice" | "rank";
+export const VIEWS: ViewName[] = ["home", "ledger", "save", "flow", "goal", "setup", "notice", "rank"];
 
 /** 설정이 끝난 뒤 화면에서 쓰는 값 (지금 보고 있는 달 기준) */
 export interface Model {

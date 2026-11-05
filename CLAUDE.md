@@ -6,3 +6,4 @@
 - 저장 키 `aggim-v1`은 바꾸지 않아요. 바꾸면 모든 사람의 기록이 사라진 것처럼 보여요.
 - 날짜·돈 계산은 `src/lib`의 순수 함수로 두고 Vitest 테스트를 같이 고쳐요 (`npm test`).
 - 배포 주소는 `/ssapgeoji/` (`vite.config.ts`의 base). 저장소 이름과 같아야 해요.
+- **친구 랭킹: 금액·내역·메모 등 가계부 기록은 절대 서버로 보내지 않아요.** 서버로 가는 값은 `src/lib/rank.ts`의 `buildScorePayload`(코드·닉네임·시즌·지킴률·등급·파산 여부)뿐이고, 테스트가 이걸 지켜요. 랭킹 서버 설정은 `src/rankConfig.ts`, DB는 `supabase/ranking.sql`.

@@ -337,3 +337,31 @@ body { padding-top: calc(18px + env(safe-area-inset-top, 0px)); }
 
 /* 수정: 카드 안에 단독으로 있는 입력칸이 세로로 늘어나 빈 공간이 생기던 문제 */
 .card > .field { flex: 0 0 auto; }
+
+/* 추가: 친구 랭킹 */
+.rank-card { cursor: pointer; }
+.rank-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.rank-card .chev { color: var(--muted); display: flex; }
+.rank-card .chev svg { width: 18px; height: 18px; }
+.rank-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 15px; font-weight: 600; }
+.grades { display: flex; flex-direction: column; gap: 4px; background: var(--surface-2); border-radius: 14px; padding: 12px 14px; font-size: 13.5px; color: var(--muted); }
+.code-box { display: flex; align-items: center; gap: 10px; background: var(--surface-2); border-radius: 14px; padding: 10px 10px 10px 14px; }
+.code-box b { flex: 1; font-size: 17px; letter-spacing: .04em; }
+.code-box .btn { padding: 8px 14px; }
+.rank-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.rank-list li { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 11px 8px; border-top: 1px solid var(--line); }
+.rank-list li:first-child { border-top: none; }
+.rank-list li.me { background: var(--accent-soft); border-radius: 12px; border-top-color: transparent; }
+.rank-list li.me + li { border-top-color: transparent; }
+.rank-list .rk { font-weight: 700; font-size: 17px; text-align: center; }
+.rank-list .rn { display: flex; flex-direction: column; min-width: 0; }
+.rank-list .rn b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rank-list .rn b small { color: var(--muted); font-weight: 500; }
+.rank-list .rn > span { font-size: 13.5px; }
+.rank-list .ra { display: flex; align-items: center; gap: 8px; }
+.privacy { display: flex; flex-direction: column; gap: 10px; }
+.privacy .pv { border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
+.privacy .pv.ok { background: var(--surface-2); }
+.privacy .pv.no { background: var(--good-soft); color: var(--ink); }
+.privacy .pv.no b { color: var(--good); }
+.privacy ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 13.5px; display: flex; flex-direction: column; gap: 4px; }
