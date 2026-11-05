@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { countsFor, daysFor, makePlan, periodOf, splitFor } from "./period";
+import { countsFor, daysFor, makePlan, periodOf, periodsTouching, resplitPlans, splitFor } from "./period";
 import { scoreFor } from "./rank";
 import { savedDays } from "./savings";
 import { dataWith, item, makeCfg } from "./testUtils";
@@ -92,5 +92,22 @@ describe("아낀 돈과 랭킹", () => {
     const over = { ...m, "2026-11-23": { items: [item(60000)], limit: null, noSpend: false } }; // 합계 310,000 > 300,001
     // 기록한 날 4일(19, 20, 22, 23) 중 여행 날 3일은 모두 못 지킴
     expect(scoreFor(dataWith({ days: over }), cfg, season).pct).toBe(25);
+  });
+});
+
+describe("달력에서 약속·여행을 바꾼 뒤 다시 나누기", () => {
+  it("걸친 기간 찾기", () => {
+    expect(periodsTouching("2026-11-29", "2026-12-02", 1).map((p) => p.start)).toEqual(["2026-11-01", "2026-12-01"]);
+    expect(periodsTouching("2026-11-20", "2026-11-20", 1).map((p) => p.start)).toEqual(["2026-11-01"]);
+  });
+  it("자동 배분 계획만 다시 나눠요", () => {
+    const cfg = makeCfg({ autoLimits: true, total: 400000, trips: [busan] });
+    const periods = {
+      "2026-11-01": { total: 400000, apptLimit: 0, auto: true, weekday: 1, weekend: 1 },
+      "2026-12-01": { total: 400000, apptLimit: 0, auto: false, weekday: 7, weekend: 7 },
+    };
+    resplitPlans(periods, cfg, periodsTouching("2026-11-20", "2026-12-02", 1));
+    expect(periods["2026-11-01"]).toMatchObject({ weekday: 2500, weekend: 3500 });
+    expect(periods["2026-12-01"]).toMatchObject({ weekday: 7, weekend: 7 });
   });
 });

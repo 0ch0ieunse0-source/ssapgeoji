@@ -4,16 +4,17 @@ import { Sheet, SheetHead } from "../components/Sheet";
 import { DOW, md } from "../lib/date";
 import { parse, won } from "../lib/format";
 import { getDay, isNoSpend, limitOf, setDay, spentOf } from "../lib/ledger";
-import { countsFor, periodOf, splitFor } from "../lib/period";
 import { sd } from "../lib/date";
 import { tripSpent } from "../lib/trip";
 import { useApp } from "../state/app";
+import { ApptSheet, type ApptTarget } from "./ApptSheet";
 
 /** 하루 상세: 내역 삭제, 그날 한도 바꾸기, 무지출·약속 날 표시 */
 export function DaySheet() {
   const { S, dayKey, closeDay, model, update, toast, openEntry, toggleNoSpend } = useApp();
   const d = model && dayKey ? model.dayByKey(dayKey) : undefined;
   const [limitV, setLimitV] = useState("");
+  const [appt, setAppt] = useState<ApptTarget>(null);
   const limRef = useRef<HTMLInputElement>(null);
   const l = d ? limitOf(S.days, d) : 0;
 
@@ -27,27 +28,13 @@ export function DaySheet() {
 
   const content = (() => {
     if (!d || !model) return null;
-    const { cfg, cur, plan } = model;
+    const { cfg, cur } = model;
     const s = spentOf(S.days, d.key);
     const items = getDay(S.days, d.key).items;
     const isAppt = d.tag === "약속";
     const trip = d.trip;
     const tSpent = trip ? tripSpent(S.days, trip) : 0;
 
-    const toggleAppt = () => {
-      const k = d.key, set = new Set(cfg.appts || []);
-      const on = !set.has(k);
-      if (on) set.add(k);
-      else set.delete(k);
-      update((data) => {
-        const c = data.settings!;
-        c.appts = Array.from(set).sort();
-        const p = periodOf(k, c.cycleDay);
-        const pl = data.periods[p.start];
-        if (pl && pl.auto) Object.assign(pl, splitFor(pl.total, pl.apptLimit, countsFor(p, c.appts, c.trips)));
-      });
-      toast(on ? "약속 날로 표시했어요. 이날 한도가 " + won(plan.apptLimit) + "이 돼요." : "약속 표시를 지웠어요.");
-    };
     const saveLimit = (v: number | null) => {
       update((data) => setDay(data.days, d.key, { limit: v }));
       limRef.current?.blur();
@@ -56,7 +43,7 @@ export function DaySheet() {
 
     return (
       <>
-        <SheetHead id="dayTitle" title={md(d.date) + " (" + DOW[d.wd] + ")" + (isAppt ? " · 약속" : trip ? " · " + trip.name : "")} onClose={closeDay} />
+        <SheetHead id="dayTitle" title={md(d.date) + " (" + DOW[d.wd] + ")" + (isAppt ? " · " + (cfg.apptNames?.[d.key] || "약속") : trip ? " · " + trip.name : "")} onClose={closeDay} />
         <div className="tiles">
           <div className="tile">
             <span className="k">{trip ? "이날 쓴 돈" : "쓴 돈 (내 몫)"}</span>
@@ -106,11 +93,9 @@ export function DaySheet() {
               {isNoSpend(S.days, d.key) ? "무지출 취소" : "무지출로 표시"}
             </button>
           )}
-          {!trip && (
-            <button className="btn line" style={{ flex: 1 }} onClick={toggleAppt}>
-              {isAppt ? "약속 취소" : "약속 날로 표시"}
-            </button>
-          )}
+          <button className="btn line" style={{ flex: 1 }} onClick={() => setAppt({ day: d.key, mode: trip ? "trip" : isAppt ? "appt" : "new", trip })}>
+            {trip ? "여행 수정" : isAppt ? "약속 수정" : "약속 추가"}
+          </button>
           {d.key <= cur.end && (
             <button
               className="btn soft"
@@ -130,8 +115,11 @@ export function DaySheet() {
   })();
 
   return (
-    <Sheet open={!!d} onClose={closeDay} labelledBy="dayTitle">
-      {content}
-    </Sheet>
+    <>
+      <Sheet open={!!d} onClose={closeDay} labelledBy="dayTitle">
+        {content}
+      </Sheet>
+      {model && <ApptSheet target={appt} onClose={() => setAppt(null)} />}
+    </>
   );
 }

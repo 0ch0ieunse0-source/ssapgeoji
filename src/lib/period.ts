@@ -112,3 +112,18 @@ export function weeksOf(days: DayInfo[]): DayInfo[][] {
   });
   return weeks;
 }
+
+/** start~end에 걸친 한 달 기간들 */
+export function periodsTouching(start: Key, end: Key, cycleDay: number): Period[] {
+  const out: Period[] = [];
+  for (let p = periodOf(start, cycleDay); p.start <= end; p = shiftPeriod(p, 1, cycleDay)) out.push(p);
+  return out;
+}
+
+/** 약속·여행을 바꾼 뒤, 저장해 둔 '자동 배분' 계획을 다시 나눠요 (직접 입력한 한도는 그대로) */
+export function resplitPlans(periods: Record<Key, Plan>, cfg: Settings, ps: Period[]) {
+  ps.forEach((p) => {
+    const pl = periods[p.start];
+    if (pl && pl.auto) Object.assign(pl, splitFor(pl.total, pl.apptLimit, countsFor(p, cfg.appts, cfg.trips)));
+  });
+}

@@ -130,6 +130,7 @@ export function SetupView({ section = "" }: { section?: string }) {
         weekend: weN,
         appts: oldAppts.concat(appts),
         trips: (prev?.trips || []).filter((t) => t.end < curStart).concat(trips),
+        apptNames: Object.fromEntries(Object.entries(prev?.apptNames || {}).filter(([k]) => oldAppts.includes(k) || appts.includes(k))),
         apptLimit: apl,
         balance: balanceN,
         balanceDate: balanceN == null ? null : balanceChanged ? today : prev!.balanceDate,
@@ -270,7 +271,7 @@ export function SetupView({ section = "" }: { section?: string }) {
             .sort()
             .map((k) => (
               <span key={k} className="chip">
-                {sd(k) + " (" + DOW[dOf(k).getDay()] + ")"}
+                {sd(k) + " (" + DOW[dOf(k).getDay()] + ")" + (c.apptNames?.[k] ? " " + c.apptNames[k] : "")}
                 <button className="rm" aria-label={sd(k) + " 약속 지우기"} onClick={() => setAppts(appts.filter((x) => x !== k))}>
                   ✕
                 </button>

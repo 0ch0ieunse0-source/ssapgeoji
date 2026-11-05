@@ -33,6 +33,9 @@ export function Sheet({
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
+      // 창이 여러 개 겹쳐 있으면 맨 위 창만 반응해요
+      const opened = Array.from(document.querySelectorAll(".scrim:not([hidden])"));
+      if (opened[opened.length - 1] !== ref.current?.parentElement) return;
       if (e.key === "Escape") onClose();
       if (e.key === "Tab" && ref.current) {
         const f = Array.from(ref.current.querySelectorAll<HTMLElement>("button, input, select, [tabindex]:not([tabindex='-1'])")).filter(

@@ -55,6 +55,8 @@ export interface Settings {
   firstStart: Key | null;
   /** 메인 컬러 (설정 → 화면). 없으면 초록 */
   accent?: string;
+  /** 약속 이름 (선택): 날짜 → "민지 생일" */
+  apptNames?: Record<Key, string>;
   /** 여행 (여러 날을 한 예산으로) */
   trips?: import("./trip").Trip[];
 }

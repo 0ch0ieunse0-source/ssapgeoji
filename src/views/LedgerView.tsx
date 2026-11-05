@@ -8,7 +8,9 @@ import { useApp, useModel } from "../state/app";
 
 export function LedgerView() {
   const { S, today, openDay } = useApp();
-  const { days, weeks, view, dayByKey, L } = useModel();
+  const { days, weeks, view, dayByKey, L, cfg } = useModel();
+  const nm = (k: string) => cfg.apptNames?.[k];
+  const cut = (x: string) => (x.length > 4 ? x.slice(0, 4) + "…" : x);
   const D = L; // 생활비 계산용
   const R = S.days; // 실제 기록
   const lim = days.reduce((s, d) => s + limitOf(D, d), 0);
@@ -39,13 +41,13 @@ export function LedgerView() {
         key={k}
         className={cls}
         aria-label={
-          md(d) + (t ? " " + t.name + ", 쓴 돈 " + won(s) + (over ? ", 여행 예산 초과" : "") : (info.tag === "약속" ? " 약속" : "") + " 한도 " + won(l) + ", 쓴 돈 " + won(s) + (ns ? ", 무지출" : "") + (over ? ", 한도 초과" : ""))
+          md(d) + (t ? " " + t.name + ", 쓴 돈 " + won(s) + (over ? ", 여행 예산 초과" : "") : (info.tag === "약속" ? " " + (nm(k) || "약속") : "") + " 한도 " + won(l) + ", 쓴 돈 " + won(s) + (ns ? ", 무지출" : "") + (over ? ", 한도 초과" : ""))
         }
         aria-current={k === today ? "date" : undefined}
         onClick={() => openDay(info.key)}
       >
         <span className="n">{label}</span>
-        <span className={"s" + (s || ns ? "" : " zero")}>{s ? "-" + short(s) : ns ? "무지출" : t ? (k === t.start || k === view.start ? t.name : "·") : short(l)}</span>
+        <span className={"s" + (s || ns ? "" : " zero")}>{s ? "-" + short(s) : ns ? "무지출" : t ? (k === t.start || k === view.start ? cut(t.name) : "·") : info.tag === "약속" && nm(k) ? cut(nm(k)!) : short(l)}</span>
       </button>,
     );
   }
