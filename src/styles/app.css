@@ -503,3 +503,11 @@ body { padding-top: calc(18px + env(safe-area-inset-top, 0px)); }
 @keyframes slideL { from { transform: translateX(24px); opacity: .4; } to { transform: none; opacity: 1; } }
 @keyframes slideR { from { transform: translateX(-24px); opacity: .4; } to { transform: none; opacity: 1; } }
 .cell { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+
+/* 수정: 아이폰에서 입력칸을 누르면 화면이 확대되던 문제
+   (Safari는 글자가 16px보다 작은 입력칸에 초점이 가면 자동으로 확대해요. 손가락으로 쓰는 기기에서만 16px로 맞춰요) */
+@media (pointer: coarse) {
+  input:not(#amount):not([type="checkbox"]):not([type="radio"]), select, textarea { font-size: 16px !important; }
+}
+/* 버튼을 빨리 두 번 눌렀을 때 확대되지 않게 (두 손가락 확대는 그대로 돼요) */
+html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
