@@ -7,6 +7,7 @@ import { fmt, parse, uid6, won } from "../lib/format";
 import { getDay, limitOf, setDay, spentOf } from "../lib/ledger";
 import { daysFor, periodOf, planFor } from "../lib/period";
 import { MAX_ROUNDS, splitRounds } from "../lib/split";
+import { SettlePanel } from "../components/SettlePanel";
 import type { Item, Pay } from "../lib/types";
 import { useApp } from "../state/app";
 
@@ -24,6 +25,8 @@ export function EntrySheet() {
   const [splitMode, setSplitMode] = useState<"once" | "rounds">("once");
   const blankRounds = () => [{ amount: "", people: "2" }];
   const [rounds, setRounds] = useState<{ amount: string; people: string }[]>(blankRounds);
+  const [names, setNames] = useState<string[]>([]);
+  const [attend, setAttend] = useState<boolean[][]>([]);
   const amtRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -58,6 +61,8 @@ export function EntrySheet() {
       it.mine = mine;
       it.received = false;
       if (byRounds && rs.valid.length > 1) it.rounds = rs.valid;
+      const nm = names.map((x) => x.trim()).filter(Boolean);
+      it.settle = { people: byRounds ? undefined : people, names: nm, attend: byRounds && rs.valid.length > 1 && nm.length ? attend : undefined };
     }
     update((d) => setDay(d.days, k, { items: getDay(d.days, k).items.concat([it]), noSpend: false }));
     setAmount("");
@@ -65,6 +70,8 @@ export function EntrySheet() {
     setSplitMine("");
     setSplitOn(false);
     setRounds(blankRounds());
+    setNames([]);
+    setAttend([]);
     closeEntry();
     const p = periodOf(k, cfg.cycleDay);
     if (p.start !== view.start) setView(p);
@@ -208,6 +215,22 @@ export function EntrySheet() {
               ? (byRounds ? "총 " + won(n) + " 결제 · " : "") + "내 몫 " + won(shareNow) + "만 한도에서 빠지고, " + won(n - shareNow) + "은 받을 돈으로 적혀요."
               : "내 몫만 한도에서 빠지고, 나머지는 받을 돈으로 따로 적혀요."}
           </p>
+          {n > 0 && (
+            <SettlePanel
+              input={{
+                title: memo.trim() || cat,
+                date: day,
+                total: n,
+                mine: shareNow,
+                people: byRounds ? rs.valid[0]?.people || 2 : people,
+                rounds: byRounds && rs.valid.length > 1 ? rs.valid : [],
+              }}
+              names={names}
+              setNames={setNames}
+              attend={attend}
+              setAttend={setAttend}
+            />
+          )}
         </div>
       )}
       <button className="btn" disabled={!n} onClick={addEntry}>

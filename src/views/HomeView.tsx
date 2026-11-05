@@ -1,6 +1,12 @@
 import { BigWon, SmallIco, TxRow, Won } from "../components/common";
 import { Donut } from "../components/Donut";
 import { RankCard } from "../components/RankCard";
+import { useState } from "react";
+import { Sheet, SheetHead } from "../components/Sheet";
+import { AccountFields, ShareButtons } from "../components/SettlePanel";
+import { settleMessage } from "../lib/settle";
+import { loadAccount } from "../state/account";
+import type { Item } from "../lib/types";
 import { catVar } from "../lib/cats";
 import { DOW, md, sd } from "../lib/date";
 import { flowAmount, flowItems } from "../lib/flow";
@@ -49,6 +55,22 @@ export function HomeView() {
 
   // 신용카드
   const nextCard = flowItems(S, cfg, cur, true).find((it) => it.type === "card" && it.date >= today && it.status !== "skip");
+
+  const [msgFor, setMsgFor] = useState<{ it: Item; key: string } | null>(null);
+  const [, bumpAcc] = useState(0);
+  const msgText = msgFor
+    ? settleMessage({
+        title: msgFor.it.memo || msgFor.it.cat,
+        date: msgFor.key,
+        total: msgFor.it.amount,
+        mine: mineOf(msgFor.it),
+        people: msgFor.it.settle?.people ?? 2,
+        rounds: msgFor.it.rounds || [],
+        names: msgFor.it.settle?.names || [],
+        attend: msgFor.it.settle?.attend,
+        account: loadAccount(),
+      })
+    : "";
 
   const received = (key: string, id: string, amount: number) => {
     update((d) => setDay(d.days, key, { items: getDay(d.days, key).items.map((x) => (x.id === id ? { ...x, received: true, receivedOn: today } : x)) }));
@@ -213,6 +235,10 @@ export function HomeView() {
               </span>
               <span className="a">
                 <b>{won(it.amount - mineOf(it))}</b>
+                <span className="mini-btns">
+                <button className="btn line" style={{ padding: "5px 10px", fontSize: "12.5px" }} aria-label={(it.memo || "대신 낸 돈") + " 정산 메시지"} onClick={() => setMsgFor({ it, key })}>
+                  메시지
+                </button>
                 <button
                   className="btn soft"
                   style={{ padding: "5px 10px", fontSize: "12.5px" }}
@@ -221,12 +247,23 @@ export function HomeView() {
                 >
                   받았어요
                 </button>
+                </span>
               </span>
             </li>
           ))}
         </ul>
         {owes.length === 0 && <p className="hint">대신 낸 돈이 없어요. 먼저 결제했다면 자리 뜨기 전에 송금 요청부터 보내세요.</p>}
       </section>
+
+      <Sheet open={!!msgFor} onClose={() => setMsgFor(null)} labelledBy="msgTitle">
+        <SheetHead id="msgTitle" title="정산 메시지" onClose={() => setMsgFor(null)} />
+        <pre className="settle-preview">{msgText}</pre>
+        <ShareButtons text={msgText} />
+        <details className="settle-acc">
+          <summary>내 계좌 바꾸기</summary>
+          <AccountFields idp="hm" onChange={() => bumpAcc((x) => x + 1)} />
+        </details>
+      </Sheet>
     </div>
   );
 }

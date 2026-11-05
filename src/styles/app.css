@@ -336,7 +336,7 @@ body { padding-top: calc(18px + env(safe-area-inset-top, 0px)); }
 .update-toast:not([hidden]) ~ .toast { bottom: calc(204px + env(safe-area-inset-bottom, 0px)); }
 
 /* 수정: 카드 안에 단독으로 있는 입력칸이 세로로 늘어나 빈 공간이 생기던 문제 */
-.card > .field { flex: 0 0 auto; }
+:not(.row) > .field { flex: 0 0 auto; }
 
 /* 추가: 친구 랭킹 */
 .rank-card { cursor: pointer; }
@@ -400,3 +400,20 @@ body { padding-top: calc(18px + env(safe-area-inset-top, 0px)); }
 .round .x { width: 32px; height: 32px; }
 #amount[readonly] { color: var(--ink); }
 .inbox .memo { color: var(--ink); }
+
+/* 추가: 정산 메시지 (베타) */
+.settle { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--line); padding-top: 8px; }
+.settle-toggle { align-self: flex-start; border: none; background: none; padding: 4px 0; font-size: 13px; color: var(--muted); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.settle-toggle .badge { font-size: 11px; padding: 1px 7px; }
+.settle .lbl { margin-bottom: -4px; }
+.settle input { background: var(--surface); }
+.settle-names { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.settle-names li { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: var(--surface); border-radius: 12px; padding: 8px 12px; }
+.settle-names li b { font-weight: 600; min-width: 48px; }
+.settle-names .chips { flex: 1; }
+.settle-names .chip { padding: 4px 10px; font-size: 12.5px; }
+.settle-names .del { margin-left: auto; }
+.settle-preview { margin: 0; white-space: pre-wrap; font-family: var(--font); font-size: 13.5px; line-height: 1.6; background: var(--surface); border: 1px dashed var(--line); border-radius: 12px; padding: 12px 14px; overflow-wrap: anywhere; }
+.sheet .settle-preview { background: var(--surface-2); border: none; }
+.settle-acc summary { font-size: 13px; color: var(--muted); cursor: pointer; padding: 4px 0; }
+.settle-acc[open] { display: flex; flex-direction: column; gap: 8px; }
