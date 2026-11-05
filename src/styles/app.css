@@ -515,3 +515,5 @@ html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adj
 /* 추가: 처음 쓰기 전 날 (한도 0) */
 .cell.pre .s { color: var(--muted); font-weight: 400; }
 .cell.pre .n { opacity: .55; }
+.pre-box { display: flex; flex-direction: column; gap: 8px; }
+.pre-box .lbl { margin-bottom: -2px; }

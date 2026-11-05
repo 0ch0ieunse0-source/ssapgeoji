@@ -1,5 +1,5 @@
 import { addDays, dateFor, dOf } from "./date";
-import type { Key, Period, Plan, Settings } from "./types";
+import type { DaysMap, Key, Period, Plan, Settings } from "./types";
 import { tripAlloc, tripOn, type Trip } from "./trip";
 
 /** k가 들어 있는 한 달 기간. cycleDay일에 시작해서 다음 달 cycleDay 전날에 끝나요. */
@@ -29,11 +29,10 @@ export interface Counts {
  * 기간 안의 평일·주말·약속 날 수 (약속 날은 평일·주말에서 빠져요).
  * 여행 중 '생활비 안에서' 날은 따로 세고, '따로 모아 둔 돈' 날은 평소처럼 세요 (다른 날 한도가 그대로이게).
  */
-export function countsFor(p: Period, appts: Key[] | undefined, trips?: Trip[], join?: Key | null): Counts {
+export function countsFor(p: Period, appts: Key[] | undefined, trips?: Trip[]): Counts {
   const set = new Set(appts || []);
   let wd = 0, we = 0, ap = 0, td = 0, trip = 0;
   for (let k = p.start; k <= p.end; k = addDays(k, 1)) {
-    if (join && k < join && !tripOn(trips, k)) continue; // 처음 쓰기 전 날은 나누지 않아요
     const t = tripOn(trips, k);
     if (t && t.fund === "living") {
       td++;
@@ -65,7 +64,7 @@ export function makePlan(cfg: Settings, p: Period): Plan {
     weekday: cfg.weekday,
     weekend: cfg.weekend,
   };
-  if (cfg.autoLimits) Object.assign(plan, splitFor(plan.total, plan.apptLimit, countsFor(p, cfg.appts, cfg.trips, cfg.joinDate)));
+  if (cfg.autoLimits) Object.assign(plan, splitFor(plan.total, plan.apptLimit, countsFor(p, cfg.appts, cfg.trips)));
   return plan;
 }
 
@@ -80,10 +79,11 @@ export interface DayInfo {
   base: number; // 기본 한도 (여행 날은 생활비 계산용 몫)
   tag: "" | "주말" | "약속" | "여행";
   trip?: Trip; // 여행 날이면 그 여행
-  pre?: boolean; // 처음 쓰기 전 날 (한도 0)
+  pre?: boolean; // '0으로 처리'한 처음 쓰기 전 날 (한도 0)
+  preBase?: number; // 그날 원래 한도 (그 달 생활비에서 빼는 금액)
 }
 
-export function daysFor(p: Period, plan: Plan, appts: Key[] | undefined, trips?: Trip[], join?: Key | null): DayInfo[] {
+export function daysFor(p: Period, plan: Plan, appts: Key[] | undefined, trips?: Trip[], isPre?: (k: Key) => boolean): DayInfo[] {
   const appt = new Set(appts || []);
   const out: DayInfo[] = [];
   for (let k = p.start; k <= p.end; k = addDays(k, 1)) {
@@ -93,15 +93,15 @@ export function daysFor(p: Period, plan: Plan, appts: Key[] | undefined, trips?:
       out.push({ key: k, date: d, wd, base: tripAlloc(t, k), tag: "여행", trip: t });
       continue;
     }
-    if (join && k < join) {
-      out.push({ key: k, date: d, wd, base: 0, tag: we ? "주말" : "", pre: true });
-      continue;
-    }
     let base = we ? plan.weekend : plan.weekday;
     let tag: DayInfo["tag"] = we ? "주말" : "";
     if (appt.has(k)) {
       base = plan.apptLimit;
       tag = "약속";
+    }
+    if (isPre?.(k)) {
+      out.push({ key: k, date: d, wd, base: 0, tag, pre: true, preBase: base });
+      continue;
     }
     out.push({ key: k, date: d, wd, base, tag });
   }
@@ -130,6 +130,23 @@ export function periodsTouching(start: Key, end: Key, cycleDay: number): Period[
 export function resplitPlans(periods: Record<Key, Plan>, cfg: Settings, ps: Period[]) {
   ps.forEach((p) => {
     const pl = periods[p.start];
-    if (pl && pl.auto) Object.assign(pl, splitFor(pl.total, pl.apptLimit, countsFor(p, cfg.appts, cfg.trips, cfg.joinDate)));
+    if (pl && pl.auto) Object.assign(pl, splitFor(pl.total, pl.apptLimit, countsFor(p, cfg.appts, cfg.trips)));
   });
 }
+
+/**
+ * 처음 쓰기 전 날 중 '0으로 처리'할 날 (설정에서 0으로 처리를 고른 사람만).
+ * 기록·무지출·한도를 직접 넣은 날은 건드리지 않아요.
+ */
+export function preZero(cfg: Settings, m: DaysMap): ((k: Key) => boolean) | undefined {
+  if (cfg.preStart !== "zero" || !cfg.joinDate) return undefined;
+  const join = cfg.joinDate;
+  return (k) => {
+    if (k >= join) return false;
+    const r = m[k];
+    return !(r && (r.items?.length || r.noSpend || typeof r.limit === "number"));
+  };
+}
+
+/** 그 달 생활비: '0으로 처리'한 날의 원래 한도만큼 빼요 */
+export const budgetOf = (plan: Plan, days: DayInfo[]) => plan.total - days.reduce((s, d) => s + (d.preBase || 0), 0);

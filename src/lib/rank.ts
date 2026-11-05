@@ -4,7 +4,7 @@
  */
 import { addDays, dOf } from "./date";
 import { limitOf, loggedDay, spentOf } from "./ledger";
-import { daysFor, periodOf, planFor, type DayInfo } from "./period";
+import { daysFor, periodOf, planFor, preZero, type DayInfo } from "./period";
 import { livingMap, tripSpent } from "./trip";
 import type { Data, Key, Period, Settings } from "./types";
 
@@ -50,7 +50,7 @@ export function scoreFor(data: Data, cfg: Settings, season: Period): SeasonScore
   const cache = new Map<Key, DayInfo[]>();
   const infoOf = (k: Key): DayInfo => {
     const p = periodOf(k, cfg.cycleDay);
-    if (!cache.has(p.start)) cache.set(p.start, daysFor(p, planFor(data.periods, cfg, p), cfg.appts, cfg.trips, cfg.joinDate));
+    if (!cache.has(p.start)) cache.set(p.start, daysFor(p, planFor(data.periods, cfg, p), cfg.appts, cfg.trips, preZero(cfg, data.days)));
     return cache.get(p.start)!.find((d) => d.key === k)!;
   };
   const L = livingMap(data.days, cfg.trips);

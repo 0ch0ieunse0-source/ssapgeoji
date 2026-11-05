@@ -5,7 +5,7 @@ import { CATS } from "../lib/cats";
 import { dOf, md } from "../lib/date";
 import { fmt, parse, uid6, won } from "../lib/format";
 import { getDay, limitOf, setDay, spentOf } from "../lib/ledger";
-import { daysFor, periodOf, planFor } from "../lib/period";
+import { daysFor, periodOf, planFor, preZero } from "../lib/period";
 import { MAX_ROUNDS, splitRounds } from "../lib/split";
 import { tripSpent } from "../lib/trip";
 import { SettlePanel } from "../components/SettlePanel";
@@ -45,7 +45,7 @@ export function EntrySheet() {
 
   if (!model) return null;
   const { cfg, cur, view } = model;
-  const entryMin = [cfg.firstStart || cur.start, cfg.joinDate || ""].sort().pop()!;
+  const entryMin = cfg.firstStart || cur.start;
   const byRounds = splitOn && splitMode === "rounds";
   const rs = splitRounds(rounds.map((r) => ({ amount: parse(r.amount), people: parseInt(r.people, 10) || 1 })));
   // 차수별이면 위쪽 금액 = 차수 합계
@@ -76,7 +76,7 @@ export function EntrySheet() {
     closeEntry();
     const p = periodOf(k, cfg.cycleDay);
     if (p.start !== view.start) setView(p);
-    const dd = daysFor(p, planFor(S.periods, cfg, p), cfg.appts, cfg.trips, cfg.joinDate).find((x) => x.key === k)!;
+    const dd = daysFor(p, planFor(S.periods, cfg, p), cfg.appts, cfg.trips, preZero(cfg, S.days)).find((x) => x.key === k)!;
     const oweNote = splitOn && n > mine ? " 받을 돈 " + won(n - mine) + "은 지금 송금 요청하세요." : "";
     if (dd.trip) {
       const tl = dd.trip.budget - (tripSpent(S.days, dd.trip) + mine);

@@ -55,8 +55,10 @@ export interface Settings {
   firstStart: Key | null;
   /** 메인 컬러 (설정 → 화면). 없으면 초록 */
   accent?: string;
-  /** 처음 쓰기 시작한 날. 이전 날은 한도 0으로 보고 나누지 않아요 */
+  /** 처음 쓰기 시작한 날 */
   joinDate?: Key;
+  /** 처음 쓰기 전 날: "zero"면 한도 0으로 보고 그만큼 그 달 생활비에서 빼요. 없거나 "keep"이면 그대로 */
+  preStart?: "zero" | "keep";
   /** 약속 이름 (선택): 날짜 → "민지 생일" */
   apptNames?: Record<Key, string>;
   /** 여행 (여러 날을 한 예산으로) */

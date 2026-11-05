@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { addDays } from "./date";
-import { countsFor, daysFor, makePlan, periodOf, shiftPeriod, splitFor, weeksOf } from "./period";
+import { budgetOf, countsFor, daysFor, makePlan, periodOf, preZero, shiftPeriod, splitFor, weeksOf } from "./period";
 import { makeCfg } from "./testUtils";
 
 describe("periodOf: 한 달 기간", () => {
@@ -137,22 +137,34 @@ describe("makePlan / daysFor / weeksOf", () => {
   });
 });
 
-describe("처음 쓰기 전 날", () => {
+describe("처음 쓰기 전 날 (0으로 처리를 고른 사람만)", () => {
   const p = periodOf("2026-11-05", 1);
-  it("처음 쓴 날 이전은 날 수에서 빠지고, 생활비를 남은 날에 나눠요", () => {
-    // 11/16(월)부터 쓰기 시작: 11/16~30 = 평일 11, 주말 4
-    expect(countsFor(p, [], undefined, "2026-11-16")).toEqual({ wd: 11, we: 4, ap: 0, n: 15 });
-    // 400000*0.95 / (11 + 6) = 22352 → 22000
-    expect(splitFor(400000, 0, countsFor(p, [], undefined, "2026-11-16"))).toEqual({ weekday: 22000, weekend: 33000 });
+  const plan = { total: 400000, apptLimit: 30000, auto: false, weekday: 10000, weekend: 15000 };
+  it("고르지 않으면(그대로) 아무것도 안 바뀌어요", () => {
+    expect(preZero(makeCfg({ joinDate: "2026-11-05" }), {})).toBeUndefined();
+    expect(preZero(makeCfg({ joinDate: "2026-11-05", preStart: "keep" }), {})).toBeUndefined();
   });
-  it("이전 날은 한도 0", () => {
-    const plan = { total: 1, apptLimit: 30000, auto: false, weekday: 10000, weekend: 15000 };
-    const days = daysFor(p, plan, ["2026-11-03"], undefined, "2026-11-05");
-    expect(days.find((d) => d.key === "2026-11-03")).toMatchObject({ base: 0, pre: true });
+  it("0으로 처리: 이전 날은 한도 0, 그 한도만큼 그 달 생활비에서 빼요 (다른 날 한도는 그대로)", () => {
+    const isPre = preZero(makeCfg({ joinDate: "2026-11-05", preStart: "zero" }), {});
+    const days = daysFor(p, plan, ["2026-11-03"], undefined, isPre);
+    // 11/1(일) 15,000 + 11/2(월) 10,000 + 11/3(약속) 30,000 + 11/4(수) 10,000 = 65,000
+    expect(days.filter((d) => d.pre).map((d) => [d.key, d.base, d.preBase])).toEqual([
+      ["2026-11-01", 0, 15000], ["2026-11-02", 0, 10000], ["2026-11-03", 0, 30000], ["2026-11-04", 0, 10000],
+    ]);
     expect(days.find((d) => d.key === "2026-11-05")).toMatchObject({ base: 10000 });
-    expect(days.filter((d) => d.pre)).toHaveLength(4);
+    expect(budgetOf(plan, days)).toBe(335000);
   });
-  it("처음 쓴 날이 없으면 그대로", () => {
-    expect(countsFor(p, [], undefined, null)).toEqual(countsFor(p, []));
+  it("기록·무지출·한도를 직접 넣은 날은 건드리지 않아요", () => {
+    const m = {
+      "2026-11-02": { items: [], limit: null, noSpend: true },
+      "2026-11-03": { items: [], limit: 5000, noSpend: false },
+      "2026-11-04": { items: [{ id: "a", amount: 1000, memo: "", cat: "식비", pay: "check" as const, t: 0 }], limit: null, noSpend: false },
+    };
+    const days = daysFor(p, plan, [], undefined, preZero(makeCfg({ joinDate: "2026-11-05", preStart: "zero" }), m));
+    expect(days.filter((d) => d.pre).map((d) => d.key)).toEqual(["2026-11-01"]);
+    expect(budgetOf(plan, days)).toBe(385000);
+  });
+  it("자동 배분 날 수는 그대로 (한 달 전체로 나눠요)", () => {
+    expect(countsFor(p, [])).toEqual({ wd: 21, we: 9, ap: 0, n: 30 });
   });
 });

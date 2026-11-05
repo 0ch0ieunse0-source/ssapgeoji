@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { MoneyInput, SmallIco } from "../components/common";
 import { dOf, DOW, md, sd } from "../lib/date";
 import { fmt, man, parse, uid6, won } from "../lib/format";
-import { countsFor, periodOf, shiftPeriod, splitFor } from "../lib/period";
+import { countsFor, daysFor, periodOf, shiftPeriod, splitFor } from "../lib/period";
 import { tripLength, tripsOverlap, type Trip, type TripFund } from "../lib/trip";
 import { EMPTY, normalize } from "../lib/storage";
 import type { Data, Fixed, Settings } from "../lib/types";
@@ -50,6 +50,8 @@ export function SetupView({ section = "" }: { section?: string }) {
   const [goalAmt, setGoalAmt] = useState(fmt(c.goalAmt));
   const [goalDate, setGoalDate] = useState(c.goalDate || "");
   const [err, setErr] = useState<string | null>(null);
+  // 처음 쓰기 전 날: 기존 사용자는 '그대로', 새로 시작하면 '0으로 처리'가 기본이에요
+  const [preStart, setPreStart] = useState<"zero" | "keep">(c.preStart || (cfg ? "keep" : "zero"));
   const [accent, setAccent] = useState<AccentId>(accentOf(c.accent));
   // 화면 페이지에서 고르는 동안 바로 미리 보여주고, 저장 안 하고 나가면 원래 색으로 돌려놔요
   const appliedAccent = useRef<AccentId>(accentOf(cfg?.accent));
@@ -61,7 +63,7 @@ export function SetupView({ section = "" }: { section?: string }) {
 
   // 미리 보기
   const p = periodOf(today, cycle), nx = shiftPeriod(p, 1, cycle);
-  const counts = countsFor(p, appts, trips, cfg?.joinDate || today);
+  const counts = countsFor(p, appts, trips);
   const totalN = parse(total), apl = parse(apptLimit);
   const split = auto && totalN ? splitFor(totalN, apl, counts) : null;
   const shownWd = split ? fmt(split.weekday) : weekday;
@@ -73,6 +75,12 @@ export function SetupView({ section = "" }: { section?: string }) {
       setWeekend(fmt(split.weekend));
     }
   }, [split?.weekday, split?.weekend]); // eslint-disable-line react-hooks/exhaustive-deps
+  const join = cfg?.joinDate || today;
+  const preDays =
+    join > p.start
+      ? daysFor(p, { total: totalN, apptLimit: apl, auto: auto, weekday: parse(shownWd), weekend: parse(shownWe) }, appts, trips, (k) => k < join && !S.days[k]?.items?.length && !S.days[k]?.noSpend && typeof S.days[k]?.limit !== "number").filter((d) => d.pre)
+      : [];
+  const preCut = preDays.reduce((x, d) => x + (d.preBase || 0), 0);
   const sum = counts.wd * parse(shownWd) + counts.we * parse(shownWe) + counts.ap * apl + (counts.trip || 0);
   const reserve = totalN - sum;
 
@@ -157,6 +165,7 @@ export function SetupView({ section = "" }: { section?: string }) {
         firstStart: prev && prev.cycleDay === cycle ? prev.firstStart : null,
         accent,
         joinDate: prev?.joinDate || today,
+        preStart,
       };
       // 이번 달부터는 새 설정으로 다시 나누기 (지난 달 계획은 그대로)
       Object.keys(d.periods).forEach((k) => {
@@ -263,6 +272,27 @@ export function SetupView({ section = "" }: { section?: string }) {
           <span>{"이번 달: " + md(dOf(p.start)) + " ~ " + md(dOf(p.end))}</span>
           <span className="k">{"다음 달: " + md(dOf(nx.start)) + " ~ " + md(dOf(nx.end))}</span>
         </div>
+        {preDays.length > 0 && (
+          <div className="pre-box">
+            <div className="lbl" id="preLbl">
+              {"이번 달 이미 지난 날 (" + sd(preDays[0].key) + "~" + sd(preDays[preDays.length - 1].key) + " · " + preDays.length + "일)"}
+            </div>
+            <div className="seg" role="group" aria-labelledby="preLbl">
+              <button aria-pressed={preStart === "zero"} onClick={() => setPreStart("zero")}>
+                0으로 처리
+              </button>
+              <button aria-pressed={preStart === "keep"} onClick={() => setPreStart("keep")}>
+                그대로 두기
+              </button>
+            </div>
+            <p className="hint">
+              {preStart === "zero"
+                ? "그 날들 한도 " + won(preCut) + "을 이번 달 생활비에서 빼요. 이번 달 생활비는 " + won(Math.max(0, totalN - preCut)) + "이 돼요. 다른 날 한도는 그대로예요."
+                : "지난 날도 원래 한도로 계산해요. 기록하지 않은 날의 한도는 쓴 돈 없이 남아 있어요."}
+              {" 기록을 적은 날은 바뀌지 않아요."}
+            </p>
+          </div>
+        )}
         <p className="hint">월급날로 맞추면 편해요. 31일처럼 없는 날은 그 달 마지막 날로 맞춰요. 한 달이 끝나면 다음 달이 저절로 시작돼요.</p>
       </section>
   );

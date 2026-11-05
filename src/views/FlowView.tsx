@@ -3,7 +3,7 @@ import { BigWon, MoneyInput } from "../components/common";
 import { addDays, sd } from "../lib/date";
 import { computeFlow, type FlowItem } from "../lib/flow";
 import { parse, uid6, won } from "../lib/format";
-import { daysFor, planFor } from "../lib/period";
+import { daysFor, planFor, preZero } from "../lib/period";
 import type { FlowOver } from "../lib/types";
 import { useApp, useModel } from "../state/app";
 
@@ -51,7 +51,7 @@ export function FlowView() {
       </div>
     );
 
-  const curDays = daysFor(cur, planFor(S.periods, cfg, cur), cfg.appts, cfg.trips, cfg.joinDate);
+  const curDays = daysFor(cur, planFor(S.periods, cfg, cur), cfg.appts, cfg.trips, preZero(cfg, S.days));
   const { rows, lastBal, minBal, minAt, last, low } = computeFlow(S, cfg, cur, curDays, today);
 
   const patchFlow = (it: FlowItem, patch: FlowOver) =>

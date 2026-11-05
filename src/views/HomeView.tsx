@@ -21,12 +21,12 @@ import { useApp, useModel } from "../state/app";
 
 export function HomeView() {
   const { S, today, update, toast, go, openEntry, openDay, toggleNoSpend } = useApp();
-  const { cfg, plan, days, weeks, view, cur, isCur, refKey, dayByKey, L } = useModel();
+  const { cfg, days, weeks, view, cur, isCur, refKey, dayByKey, L, budget } = useModel();
   const D = L; // 생활비 계산용
   const R = S.days; // 실제 기록 (목록·받을 돈·카드)
   const cd = cfg.cycleDay;
 
-  const total = plan.total;
+  const total = budget;
   const spentAll = days.reduce((s, d) => s + spentOf(D, d.key), 0);
   const left = total - spentAll - movedIn(S.savings.moves, view, cd);
   const ref = dayByKey(refKey)!;
