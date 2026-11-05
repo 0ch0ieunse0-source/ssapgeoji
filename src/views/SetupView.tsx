@@ -8,7 +8,6 @@ import type { Data, Fixed, Settings } from "../lib/types";
 import { PageHead } from "../components/PageHead";
 import { Icon } from "../components/common";
 import { ACCENTS, accentLabel, accentOf, applyAccent, type AccentId } from "../lib/theme";
-import { BOARD_URL } from "../board";
 import { currentUnread } from "../notices";
 import { useApp } from "../state/app";
 
@@ -517,7 +516,6 @@ export function SetupView({ section = "" }: { section?: string }) {
       </section>
       <section className="card menu" aria-label="기록과 도움말">
         {row("data", "기록 보관", "백업 저장·불러오기, 모든 기록 지우기", () => go("setup/data"))}
-        {BOARD_URL && row("board", "기능 제안", "바라는 기능을 남기고 다른 사람 제안도 봐요", () => go("board"), <span className="badge warn">베타</span>)}
         {row("notice", "공지사항", "", () => go("notice"), unread ? <span className="badge">{"새 소식 " + unread}</span> : undefined)}
         {row("guide", "사용법 다시 보기", "", openGuide)}
       </section>
