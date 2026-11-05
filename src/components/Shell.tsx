@@ -1,12 +1,12 @@
 import { sd } from "../lib/date";
-import { NOTICES, readNoticeSeen, unreadCount } from "../notices";
+import { currentUnread } from "../notices";
 import { shiftPeriod } from "../lib/period";
 import { useApp, type ViewName } from "../state/app";
 import { Icon } from "./common";
 
 function NoticeButton() {
   const { go } = useApp();
-  const unread = unreadCount(NOTICES, readNoticeSeen());
+  const unread = currentUnread().length;
   return (
     <button
       className="gear"

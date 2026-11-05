@@ -8,7 +8,7 @@ import type { Data, Fixed, Settings } from "../lib/types";
 import { PageHead } from "../components/PageHead";
 import { Icon } from "../components/common";
 import { ACCENTS, accentLabel, accentOf, applyAccent, type AccentId } from "../lib/theme";
-import { NOTICES, readNoticeSeen, unreadCount } from "../notices";
+import { currentUnread } from "../notices";
 import { useApp } from "../state/app";
 
 const DEFAULTS: Partial<Settings> = { cycleDay: 1, total: 400000, apptLimit: 30000, appts: [], fixed: [], autoLimits: true };
@@ -480,7 +480,7 @@ export function SetupView({ section = "" }: { section?: string }) {
       </div>
     );
 
-  const unread = unreadCount(NOTICES, readNoticeSeen());
+  const unread = currentUnread().length;
   const row = (key: string, title: string, desc: string, onClick: () => void, extra?: JSX.Element) => (
     <button key={key} className="menu-row" onClick={onClick}>
       <span className="mt">

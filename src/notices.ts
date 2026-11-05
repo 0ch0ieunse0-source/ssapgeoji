@@ -11,6 +11,16 @@ export interface Notice {
 
 export const NOTICES: Notice[] = [
   {
+    id: "2026-11-05-2",
+    date: "2026-11-05",
+    title: "공지사항을 목록으로 볼 수 있어요",
+    body: [
+      "공지사항을 목록으로 보고, 눌러서 자세한 내용을 볼 수 있어요. 아직 안 읽은 공지에는 '새 소식'이 붙어요.",
+      "'기록은 이 기기에만 저장돼요' 안내는 이제 처음 설정 화면과 설정 → 기록 보관에서만 보여요.",
+      "배경색을 연한 회색으로 바꿔서 어떤 메인 컬러를 골라도 잘 어울려요.",
+    ],
+  },
+  {
     id: "2026-11-05-1",
     date: "2026-11-05",
     title: "메인 컬러를 고를 수 있어요",
@@ -25,26 +35,55 @@ export const NOTICES: Notice[] = [
   // { id: "2026-11-06-1", date: "2026-11-06", title: "제목", body: ["내용 한 줄", "내용 두 줄"] },
 ];
 
-/** 아직 안 읽은 공지 수. seenId는 마지막으로 읽은 공지 id (없으면 전부 새 소식) */
-export function unreadCount(list: Notice[], seenId: string | null): number {
-  if (!seenId) return list.length;
-  const i = list.findIndex((n) => n.id === seenId);
-  return i === -1 ? list.length : i;
+/**
+ * 안 읽은 공지 id 목록.
+ * readIds: 하나씩 열어 본 공지, legacySeen: 예전 방식(목록을 열면 전부 읽음)으로 마지막에 본 공지 id
+ */
+export function unreadIds(list: Notice[], readIds: string[], legacySeen: string | null): string[] {
+  const legacyAt = legacySeen ? list.findIndex((n) => n.id === legacySeen) : -1;
+  return list.filter((n, i) => !readIds.includes(n.id) && !(legacyAt !== -1 && i >= legacyAt)).map((n) => n.id);
 }
 
-export const NOTICE_KEY = "ssapgeoji-notice-seen";
-export const readNoticeSeen = () => {
+export const NOTICE_KEY = "ssapgeoji-notice-seen"; // 예전 방식 (읽기만 해요)
+export const NOTICE_READ_KEY = "ssapgeoji-notice-read";
+
+function readList(): string[] {
+  try {
+    const v = JSON.parse(localStorage.getItem(NOTICE_READ_KEY) || "[]");
+    return Array.isArray(v) ? v : [];
+  } catch {
+    return [];
+  }
+}
+function writeList(ids: string[]) {
+  try {
+    localStorage.setItem(NOTICE_READ_KEY, JSON.stringify(ids));
+  } catch {
+    /* 저장이 막혀 있으면 다음에 다시 보여줘요 */
+  }
+}
+const legacy = () => {
   try {
     return localStorage.getItem(NOTICE_KEY);
   } catch {
     return null;
   }
 };
-/** 공지를 다 읽은 걸로 저장 (처음 쓰는 사람은 예전 공지를 새 소식으로 안 보여주려고 써요) */
-export const markNoticesSeen = () => {
+
+/** 지금 안 읽은 공지 id */
+export const currentUnread = () => unreadIds(NOTICES, readList(), legacy());
+/** 공지 하나를 열어 봤어요 */
+export const markNoticeRead = (id: string) => {
+  const ids = readList();
+  if (!ids.includes(id)) writeList([...ids, id]);
+};
+/** 처음 쓰는 사람: 예전 공지는 새 소식으로 안 보여줘요 */
+export const markAllNoticesRead = () => writeList(NOTICES.map((n) => n.id));
+/** 공지 기록이 아예 없는 사람인지 (처음 쓰는 사람 판별용) */
+export const hasNoticeRecord = () => {
   try {
-    localStorage.setItem(NOTICE_KEY, NOTICES[0]?.id || "");
+    return localStorage.getItem(NOTICE_READ_KEY) != null || localStorage.getItem(NOTICE_KEY) != null;
   } catch {
-    /* 저장이 막혀 있으면 다음에 다시 보여줘요 */
+    return true;
   }
 };
