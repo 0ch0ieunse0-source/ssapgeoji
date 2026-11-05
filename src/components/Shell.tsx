@@ -26,9 +26,6 @@ export function TopBar() {
     <div className="top">
       <h1>{name ? name + "님의 거지노트" : "거지노트"}</h1>
       <div className="top-r">
-        <div className="status" data-state="local">
-          이 기기에 저장돼요
-        </div>
         {model && <NoticeButton />}
         {model && (
           <button className="gear" aria-label="설정" onClick={() => go("setup")}>
