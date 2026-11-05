@@ -1,12 +1,25 @@
 import { periodOf, type DayInfo } from "./period";
 import { limitOf, loggedDay, spentOf } from "./ledger";
+import { tripLogged, tripSpent, type Trip } from "./trip";
 import type { DaysMap, Key, Move, Period, Wish } from "./types";
 
-/** 기록을 남긴 지난날마다 한도보다 덜 쓴 금액 (오늘과 기록 없는 날은 빼요) */
-export const savedDays = (m: DaysMap, days: DayInfo[], today: Key) =>
-  days
-    .filter((d) => d.key < today && loggedDay(m, d.key))
-    .map((d) => ({ d, v: Math.max(0, limitOf(m, d) - spentOf(m, d.key)) }));
+/**
+ * 기록을 남긴 지난날마다 한도보다 덜 쓴 금액 (오늘과 기록 없는 날은 빼요).
+ * 여행 날은 하루씩 보지 않고, '생활비 안에서' 여행이 끝난 뒤 (예산 − 쓴 돈)을 끝난 날에 한 번 넣어요.
+ */
+export function savedDays(m: DaysMap, days: DayInfo[], today: Key): { d: DayInfo; v: number; trip?: Trip }[] {
+  const out: { d: DayInfo; v: number; trip?: Trip }[] = [];
+  days.forEach((d) => {
+    if (d.key >= today) return;
+    if (d.trip) {
+      const t = d.trip;
+      if (d.key === t.end && t.fund === "living" && tripLogged(m, t)) out.push({ d, v: Math.max(0, t.budget - tripSpent(m, t)), trip: t });
+      return;
+    }
+    if (loggedDay(m, d.key)) out.push({ d, v: Math.max(0, limitOf(m, d) - spentOf(m, d.key)) });
+  });
+  return out;
+}
 
 export const savedTotal = (m: DaysMap, days: DayInfo[], today: Key) =>
   savedDays(m, days, today).reduce((s, x) => s + x.v, 0);

@@ -5,6 +5,7 @@
 import { addDays, dOf } from "./date";
 import { limitOf, loggedDay, spentOf } from "./ledger";
 import { daysFor, periodOf, planFor, type DayInfo } from "./period";
+import { livingMap, tripSpent } from "./trip";
 import type { Data, Key, Period, Settings } from "./types";
 
 /** 첫 시즌 시작일 (월요일). 여기서부터 2주씩 끊어요. 모든 친구가 같은 시즌으로 비교해요. */
@@ -41,23 +42,27 @@ export interface SeasonScore {
   broke: boolean;
 }
 
-/** 시즌 성적: 기록한 날 중 한도를 지킨 날의 비율, 파산 여부 */
+/**
+ * 시즌 성적: 기록한 날 중 한도를 지킨 날의 비율, 파산 여부.
+ * 여행 날은 여행 전체로 봐요: 여행 예산 안에서 썼으면 지킨 날, 넘겼으면 못 지킨 날.
+ */
 export function scoreFor(data: Data, cfg: Settings, season: Period): SeasonScore {
   const cache = new Map<Key, DayInfo[]>();
   const infoOf = (k: Key): DayInfo => {
     const p = periodOf(k, cfg.cycleDay);
-    if (!cache.has(p.start)) cache.set(p.start, daysFor(p, planFor(data.periods, cfg, p), cfg.appts));
+    if (!cache.has(p.start)) cache.set(p.start, daysFor(p, planFor(data.periods, cfg, p), cfg.appts, cfg.trips));
     return cache.get(p.start)!.find((d) => d.key === k)!;
   };
+  const L = livingMap(data.days, cfg.trips);
   let logged = 0, kept = 0, spent = 0, limits = 0;
   for (let k = season.start; k <= season.end; k = addDays(k, 1)) {
     const d = infoOf(k);
-    const l = limitOf(data.days, d), s = spentOf(data.days, k);
+    const l = limitOf(L, d), s = spentOf(L, k);
     limits += l;
     spent += s;
     if (loggedDay(data.days, k)) {
       logged++;
-      if (s <= l) kept++;
+      if (d.trip ? tripSpent(data.days, d.trip) <= d.trip.budget : s <= l) kept++;
     }
   }
   if (!logged) return { pct: null, grade: null, broke: false };

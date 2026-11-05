@@ -1,5 +1,6 @@
 import { addDays, dateFor, dOf } from "./date";
 import type { Key, Period, Plan, Settings } from "./types";
+import { tripAlloc, tripOn, type Trip } from "./trip";
 
 /** k가 들어 있는 한 달 기간. cycleDay일에 시작해서 다음 달 cycleDay 전날에 끝나요. */
 export function periodOf(k: Key, cycleDay: number): Period {
@@ -19,24 +20,38 @@ export interface Counts {
   we: number;
   ap: number;
   n: number;
+  /** 여행(생활비 안에서) 날 수와 그 몫 합계 — 이 날들은 평일·주말·약속에서 빠져요 */
+  td?: number;
+  trip?: number;
 }
 
-/** 기간 안의 평일·주말·약속 날 수 (약속 날은 평일·주말에서 빠져요) */
-export function countsFor(p: Period, appts: Key[] | undefined): Counts {
+/**
+ * 기간 안의 평일·주말·약속 날 수 (약속 날은 평일·주말에서 빠져요).
+ * 여행 중 '생활비 안에서' 날은 따로 세고, '따로 모아 둔 돈' 날은 평소처럼 세요 (다른 날 한도가 그대로이게).
+ */
+export function countsFor(p: Period, appts: Key[] | undefined, trips?: Trip[]): Counts {
   const set = new Set(appts || []);
-  let wd = 0, we = 0, ap = 0;
+  let wd = 0, we = 0, ap = 0, td = 0, trip = 0;
   for (let k = p.start; k <= p.end; k = addDays(k, 1)) {
+    const t = tripOn(trips, k);
+    if (t && t.fund === "living") {
+      td++;
+      trip += tripAlloc(t, k);
+      continue;
+    }
     const w = dOf(k).getDay();
-    if (set.has(k)) ap++;
+    if (!t && set.has(k)) ap++;
     else if (w === 0 || w === 6) we++;
     else wd++;
   }
-  return { wd, we, ap, n: wd + we + ap };
+  const c: Counts = { wd, we, ap, n: wd + we + ap };
+  if (td) Object.assign(c, { td, trip, n: c.n + td });
+  return c;
 }
 
 /** 하루 한도 자동 배분: 생활비의 95%에서 약속 날 몫을 빼고, 주말은 평일의 1.5배. 500원 단위로 내려요. */
 export function splitFor(total: number, apptLimit: number, c: Counts) {
-  const budget = total * 0.95 - c.ap * apptLimit;
+  const budget = total * 0.95 - c.ap * apptLimit - (c.trip || 0);
   const w = Math.max(0, Math.floor(budget / (c.wd + 1.5 * c.we || 1) / 500) * 500);
   return { weekday: w, weekend: Math.floor((w * 1.5) / 500) * 500 };
 }
@@ -49,7 +64,7 @@ export function makePlan(cfg: Settings, p: Period): Plan {
     weekday: cfg.weekday,
     weekend: cfg.weekend,
   };
-  if (cfg.autoLimits) Object.assign(plan, splitFor(plan.total, plan.apptLimit, countsFor(p, cfg.appts)));
+  if (cfg.autoLimits) Object.assign(plan, splitFor(plan.total, plan.apptLimit, countsFor(p, cfg.appts, cfg.trips)));
   return plan;
 }
 
@@ -61,15 +76,21 @@ export interface DayInfo {
   key: Key;
   date: Date;
   wd: number; // 0 = 일요일
-  base: number; // 기본 한도
-  tag: "" | "주말" | "약속";
+  base: number; // 기본 한도 (여행 날은 생활비 계산용 몫)
+  tag: "" | "주말" | "약속" | "여행";
+  trip?: Trip; // 여행 날이면 그 여행
 }
 
-export function daysFor(p: Period, plan: Plan, appts: Key[] | undefined): DayInfo[] {
+export function daysFor(p: Period, plan: Plan, appts: Key[] | undefined, trips?: Trip[]): DayInfo[] {
   const appt = new Set(appts || []);
   const out: DayInfo[] = [];
   for (let k = p.start; k <= p.end; k = addDays(k, 1)) {
     const d = dOf(k), wd = d.getDay(), we = wd === 0 || wd === 6;
+    const t = tripOn(trips, k);
+    if (t) {
+      out.push({ key: k, date: d, wd, base: tripAlloc(t, k), tag: "여행", trip: t });
+      continue;
+    }
     let base = we ? plan.weekend : plan.weekday;
     let tag: DayInfo["tag"] = we ? "주말" : "";
     if (appt.has(k)) {

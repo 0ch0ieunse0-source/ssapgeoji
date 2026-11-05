@@ -7,6 +7,7 @@ import { fmt, parse, uid6, won } from "../lib/format";
 import { getDay, limitOf, setDay, spentOf } from "../lib/ledger";
 import { daysFor, periodOf, planFor } from "../lib/period";
 import { MAX_ROUNDS, splitRounds } from "../lib/split";
+import { tripSpent } from "../lib/trip";
 import { SettlePanel } from "../components/SettlePanel";
 import type { Item, Pay } from "../lib/types";
 import { useApp } from "../state/app";
@@ -75,9 +76,14 @@ export function EntrySheet() {
     closeEntry();
     const p = periodOf(k, cfg.cycleDay);
     if (p.start !== view.start) setView(p);
-    const dd = daysFor(p, planFor(S.periods, cfg, p), cfg.appts).find((x) => x.key === k)!;
-    const l = limitOf(S.days, dd) - (spentOf(S.days, k) + mine);
+    const dd = daysFor(p, planFor(S.periods, cfg, p), cfg.appts, cfg.trips).find((x) => x.key === k)!;
     const oweNote = splitOn && n > mine ? " 받을 돈 " + won(n - mine) + "은 지금 송금 요청하세요." : "";
+    if (dd.trip) {
+      const tl = dd.trip.budget - (tripSpent(S.days, dd.trip) + mine);
+      toast(won(mine) + " 기록했어요. " + (tl >= 0 ? dd.trip.name + " " + won(tl) + " 남았어요." : dd.trip.name + " 예산을 " + won(-tl) + " 넘었어요.") + oweNote, tl < 0);
+      return;
+    }
+    const l = limitOf(S.days, dd) - (spentOf(S.days, k) + mine);
     toast(won(mine) + " 기록했어요. " + (l >= 0 ? "이날 " + won(l) + " 남았어요." : "이날 한도를 " + won(-l) + " 넘었어요.") + oweNote, l < 0);
   };
   const onEnter = (e: React.KeyboardEvent) => {

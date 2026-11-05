@@ -8,18 +8,22 @@ import { settleMessage } from "../lib/settle";
 import { loadAccount } from "../state/account";
 import type { Item } from "../lib/types";
 import { catVar } from "../lib/cats";
-import { DOW, md, sd } from "../lib/date";
+import { dOf, DOW, md, sd } from "../lib/date";
+const dayDiffInc = (a: string, b: string) => Math.round((dOf(b).getTime() - dOf(a).getTime()) / 86400000) + 1;
 import { flowAmount, flowItems } from "../lib/flow";
 import { man, won } from "../lib/format";
 import { getDay, isNoSpend, limitOf, mineOf, owesOf, paidOf, setDay, spentOf, viewItems } from "../lib/ledger";
+import { tripSpent } from "../lib/trip";
+
 import { shiftPeriod } from "../lib/period";
 import { movedIn, savedTotal, waitLeft } from "../lib/savings";
 import { useApp, useModel } from "../state/app";
 
 export function HomeView() {
   const { S, today, update, toast, go, openEntry, openDay, toggleNoSpend } = useApp();
-  const { cfg, plan, days, weeks, view, cur, isCur, refKey, dayByKey } = useModel();
-  const D = S.days;
+  const { cfg, plan, days, weeks, view, cur, isCur, refKey, dayByKey, L } = useModel();
+  const D = L; // 생활비 계산용
+  const R = S.days; // 실제 기록 (목록·받을 돈·카드)
   const cd = cfg.cycleDay;
 
   const total = plan.total;
@@ -27,10 +31,13 @@ export function HomeView() {
   const left = total - spentAll - movedIn(S.savings.moves, view, cd);
   const ref = dayByKey(refKey)!;
   const wk = weeks.find((w) => w.some((d) => d.key === ref.key))!;
-  const owes = owesOf(D);
+  const owes = owesOf(R);
   const oweSum = owes.reduce((s, { it }) => s + it.amount - mineOf(it), 0);
-  const items = getDay(D, ref.key).items;
-  const ns = isNoSpend(D, ref.key);
+  const items = getDay(R, ref.key).items;
+  const ns = isNoSpend(R, ref.key);
+  const trip = ref.trip;
+  const tripLeft = trip ? trip.budget - tripSpent(R, trip) : 0;
+  const tripDaysLeft = trip ? dayDiffInc(ref.key, trip.end) : 0;
 
   // 소비 리포트
   const sums: Record<string, number> = {};
@@ -96,8 +103,8 @@ export function HomeView() {
         </div>
         <div className="hero-row">
           <div>
-            <div className="k">{(ref.key === today ? "오늘" : md(ref.date)) + " 쓸 수 있는 돈"}</div>
-            <div className="v">{won(limitOf(D, ref) - spentOf(D, ref.key))}</div>
+            <div className="k">{trip ? trip.name + " 남은 돈 · " + tripDaysLeft + "일 남음" : (ref.key === today ? "오늘" : md(ref.date)) + " 쓸 수 있는 돈"}</div>
+            <div className="v">{won(trip ? tripLeft : limitOf(D, ref) - spentOf(D, ref.key))}</div>
           </div>
           <div>
             <div className="k">이번 주 남은 돈</div>
@@ -109,7 +116,7 @@ export function HomeView() {
       <div className="stats">
         <div className="stat">
           <span className="k">무지출 챌린지</span>
-          <span className="v">{days.filter((d) => isNoSpend(D, d.key)).length + "일"}</span>
+          <span className="v">{days.filter((d) => isNoSpend(R, d.key)).length + "일"}</span>
         </div>
         <div className="stat">
           <span className="k">예비비</span>
@@ -202,12 +209,12 @@ export function HomeView() {
         <div className="tiles">
           <div className="tile">
             <span className="k">이 기간 합계</span>
-            <span className="v">{won(days.reduce((s, d) => s + paidOf(D, d.key, "card"), 0))}</span>
+            <span className="v">{won(days.reduce((s, d) => s + paidOf(R, d.key, "card"), 0))}</span>
             <span className="k">친구 몫 포함 결제액</span>
           </div>
           <div className="tile">
             <span className="k">{nextCard ? sd(nextCard.date) + " 카드값 (생활비분)" : "다음 카드값"}</span>
-            <span className="v">{nextCard ? won(-flowAmount(nextCard, D)) : "-"}</span>
+            <span className="v">{nextCard ? won(-flowAmount(nextCard, R)) : "-"}</span>
             <span className="k">
               {nextCard
                 ? sd(nextCard.cycle!.from) + "~" + sd(nextCard.cycle!.to) + " 사용분"

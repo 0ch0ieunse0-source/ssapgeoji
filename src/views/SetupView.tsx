@@ -3,6 +3,7 @@ import { MoneyInput, SmallIco } from "../components/common";
 import { dOf, DOW, md, sd } from "../lib/date";
 import { fmt, man, parse, uid6, won } from "../lib/format";
 import { countsFor, periodOf, shiftPeriod, splitFor } from "../lib/period";
+import { tripLength, tripsOverlap, type Trip, type TripFund } from "../lib/trip";
 import { EMPTY, normalize } from "../lib/storage";
 import type { Data, Fixed, Settings } from "../lib/types";
 import { PageHead } from "../components/PageHead";
@@ -25,6 +26,12 @@ export function SetupView({ section = "" }: { section?: string }) {
   const [apptLimit, setApptLimit] = useState(fmt(c.apptLimit));
   const [appts, setAppts] = useState<string[]>(() => (c.appts || []).filter((k) => k >= periodOf(today, c.cycleDay || 1).start));
   const [apptDate, setApptDate] = useState("");
+  const [trips, setTrips] = useState<Trip[]>(() => (c.trips || []).filter((t) => t.end >= periodOf(today, c.cycleDay || 1).start).map((t) => ({ ...t })));
+  const [tName, setTName] = useState("");
+  const [tStart, setTStart] = useState("");
+  const [tEnd, setTEnd] = useState("");
+  const [tBudget, setTBudget] = useState("");
+  const [tFund, setTFund] = useState<TripFund>("living");
   const [auto, setAuto] = useState(c.autoLimits !== false);
   const [weekday, setWeekday] = useState(fmt(c.weekday));
   const [weekend, setWeekend] = useState(fmt(c.weekend));
@@ -51,7 +58,7 @@ export function SetupView({ section = "" }: { section?: string }) {
 
   // 미리 보기
   const p = periodOf(today, cycle), nx = shiftPeriod(p, 1, cycle);
-  const counts = countsFor(p, appts);
+  const counts = countsFor(p, appts, trips);
   const totalN = parse(total), apl = parse(apptLimit);
   const split = auto && totalN ? splitFor(totalN, apl, counts) : null;
   const shownWd = split ? fmt(split.weekday) : weekday;
@@ -63,7 +70,7 @@ export function SetupView({ section = "" }: { section?: string }) {
       setWeekend(fmt(split.weekend));
     }
   }, [split?.weekday, split?.weekend]); // eslint-disable-line react-hooks/exhaustive-deps
-  const sum = counts.wd * parse(shownWd) + counts.we * parse(shownWe) + counts.ap * apl;
+  const sum = counts.wd * parse(shownWd) + counts.we * parse(shownWe) + counts.ap * apl + (counts.trip || 0);
   const reserve = totalN - sum;
 
   const changeCycle = (n: number) => {
@@ -76,6 +83,20 @@ export function SetupView({ section = "" }: { section?: string }) {
     if (k < p.start || k > nx.end) return toast("이번 달이나 다음 달 날짜를 골라주세요.", true);
     if (!appts.includes(k)) setAppts([...appts, k]);
     setApptDate("");
+  };
+  const addTrip = () => {
+    const budget = parse(tBudget);
+    if (!tStart || !tEnd || !budget) return toast("여행 시작일, 끝날, 예산을 모두 넣어주세요.", true);
+    if (tEnd < tStart) return toast("끝날이 시작일보다 빨라요.", true);
+    if (tEnd < p.start) return toast("이미 지난 여행은 넣을 수 없어요.", true);
+    const t: Trip = { id: uid6(), name: tName.trim() || "여행", start: tStart, end: tEnd, budget, fund: tFund };
+    if (tripLength(t) > 60) return toast("여행은 60일까지 넣을 수 있어요.", true);
+    if (tripsOverlap(trips, tStart, tEnd)) return toast("다른 여행과 날짜가 겹쳐요.", true);
+    setTrips([...trips, t].sort((a, b) => (a.start < b.start ? -1 : 1)));
+    setTName("");
+    setTStart("");
+    setTEnd("");
+    setTBudget("");
   };
   const addFixed = () => {
     const nm = fxName.trim(), dayN = parseInt(fxDay, 10), amount = parse(fxAmt);
@@ -108,6 +129,7 @@ export function SetupView({ section = "" }: { section?: string }) {
         weekday: wdN,
         weekend: weN,
         appts: oldAppts.concat(appts),
+        trips: (prev?.trips || []).filter((t) => t.end < curStart).concat(trips),
         apptLimit: apl,
         balance: balanceN,
         balanceDate: balanceN == null ? null : balanceChanged ? today : prev!.balanceDate,
@@ -231,7 +253,7 @@ export function SetupView({ section = "" }: { section?: string }) {
   );
   const s2 = (
       <section className="card setup-sec">
-        <span className="step">{step(2, "약속 날짜")}</span>
+        <span className="step">{step(2, "약속과 여행")}</span>
         <p className="hint">약속 있는 날은 한도를 더 크게 잡아요. 가계부 달력에서 날짜를 눌러 약속 날로 표시해도 돼요.</p>
         <div className="row">
           <div className="field" style={{ flex: "2 1 150px" }}>
@@ -259,6 +281,62 @@ export function SetupView({ section = "" }: { section?: string }) {
           <label htmlFor="cApptLimit">약속 날 한도</label>
           <MoneyInput id="cApptLimit" value={apptLimit} onValue={setApptLimit} placeholder="0" />
         </div>
+        <div className="trip-box">
+          <b className="trip-title">여행 (여러 날)</b>
+          <p className="hint">여행 기간에는 하루 한도 없이 여행 예산 안에서 써요.</p>
+          <div className="field">
+            <label htmlFor="tName">여행 이름</label>
+            <input id="tName" maxLength={14} placeholder="예: 부산 여행" value={tName} onChange={(e) => setTName(e.target.value)} />
+          </div>
+          <div className="row">
+            <div className="field">
+              <label htmlFor="tStart">시작일</label>
+              <input id="tStart" type="date" min={p.start} value={tStart} onChange={(e) => setTStart(e.target.value)} />
+            </div>
+            <div className="field">
+              <label htmlFor="tEnd">끝날</label>
+              <input id="tEnd" type="date" min={tStart || p.start} value={tEnd} onChange={(e) => setTEnd(e.target.value)} />
+            </div>
+          </div>
+          <div className="field">
+            <label htmlFor="tBudget">여행 예산 (전체)</label>
+            <MoneyInput id="tBudget" value={tBudget} onValue={setTBudget} placeholder="0" />
+          </div>
+          <div className="lbl" id="tFundLbl">
+            예산은 어디서 써요?
+          </div>
+          <div className="seg" role="group" aria-labelledby="tFundLbl">
+            <button aria-pressed={tFund === "living"} onClick={() => setTFund("living")}>
+              생활비 안에서
+            </button>
+            <button aria-pressed={tFund === "separate"} onClick={() => setTFund("separate")}>
+              따로 모아 둔 돈
+            </button>
+          </div>
+          <p className="hint">{tFund === "living" ? "여행 예산만큼 이번 달 다른 날 한도가 줄어요." : "생활비와 따로 계산해요. 다른 날 한도는 그대로예요."}</p>
+          <button className="btn soft" onClick={addTrip}>
+            여행 추가
+          </button>
+          {trips.length > 0 && (
+            <ul className="tx">
+              {trips.map((t) => (
+                <li key={t.id}>
+                  <SmallIco text={tripLength(t) + "일"} bg="var(--accent-soft)" fg="var(--accent)" />
+                  <span className="t">
+                    <b>{t.name}</b>
+                    <span>{sd(t.start) + "~" + sd(t.end) + " · " + (t.fund === "living" ? "생활비 안에서" : "따로 모아 둔 돈")}</span>
+                  </span>
+                  <span className="a">
+                    <b>{won(t.budget)}</b>
+                    <button className="del" aria-label={t.name + " 삭제"} onClick={() => setTrips(trips.filter((x) => x.id !== t.id))}>
+                      삭제
+                    </button>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </section>
   );
   const s3 = (
@@ -278,7 +356,7 @@ export function SetupView({ section = "" }: { section?: string }) {
           <input type="checkbox" id="cAutoOn" checked={auto} onChange={(e) => setAuto(e.target.checked)} /> 매달 생활비에 맞춰 자동으로 나누기
         </label>
         <div className="preview" aria-live="polite">
-          <span>{"이번 달 평일 " + counts.wd + "일 · 주말 " + counts.we + "일 · 약속 " + counts.ap + "일"}</span>
+          <span>{"이번 달 평일 " + counts.wd + "일 · 주말 " + counts.we + "일 · 약속 " + counts.ap + "일" + (counts.td ? " · 여행 " + counts.td + "일" : "")}</span>
           <span className="k">
             {"한도 합계 " + won(sum) + " · "}
             <b className={reserve < 0 ? "minus" : "plus"}>{reserve < 0 ? "생활비보다 " + won(-reserve) + " 많아요" : "예비비 " + won(reserve)}</b>

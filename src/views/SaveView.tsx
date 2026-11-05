@@ -9,8 +9,8 @@ import { useApp, useModel } from "../state/app";
 
 export function SaveView() {
   const { S, today, update, toast, openEntry } = useApp();
-  const { cfg, days, view } = useModel();
-  const D = S.days;
+  const { cfg, days, view, L } = useModel();
+  const D = L; // 생활비 계산용
   const cd = cfg.cycleDay;
   const sdays = savedDays(D, days, today);
   const saved = sdays.reduce((s, x) => s + x.v, 0);
@@ -100,12 +100,12 @@ export function SaveView() {
             .filter((x) => x.v > 0)
             .slice(-5)
             .reverse()
-            .map(({ d, v }) => (
+            .map(({ d, v, trip }) => (
               <li key={d.key}>
                 <SmallIco text={sd(d.key)} bg="var(--good-soft)" fg="var(--good)" />
                 <span className="t">
-                  <b>{md(d.date) + " (" + DOW[d.wd] + ")"}</b>
-                  <span>{"한도 " + won(limitOf(D, d)) + " 중 " + won(spentOf(D, d.key)) + " 씀" + (isNoSpend(D, d.key) ? " · 무지출" : "")}</span>
+                  <b>{trip ? trip.name + " (" + sd(trip.start) + "~" + sd(trip.end) + ")" : md(d.date) + " (" + DOW[d.wd] + ")"}</b>
+                  <span>{trip ? "여행 예산 " + won(trip.budget) + " 중 " + won(trip.budget - v) + " 씀" : "한도 " + won(limitOf(D, d)) + " 중 " + won(spentOf(D, d.key)) + " 씀" + (isNoSpend(D, d.key) ? " · 무지출" : "")}</span>
                 </span>
                 <span className="a">
                   <b className="plus">{"+" + won(v)}</b>

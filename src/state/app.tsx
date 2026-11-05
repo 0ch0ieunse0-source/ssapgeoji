@@ -4,8 +4,9 @@ import { hasNoticeRecord, markAllNoticesRead } from "../notices";
 import { kOf, startOfToday } from "../lib/date";
 import { getDay, setDay } from "../lib/ledger";
 import { daysFor, makePlan, periodOf, planFor, shiftPeriod, weeksOf, type DayInfo } from "../lib/period";
+import { livingMap } from "../lib/trip";
 import { loadData, saveData } from "../lib/storage";
-import type { Data, Key, Period, Plan, Settings } from "../lib/types";
+import type { Data, DaysMap, Key, Period, Plan, Settings } from "../lib/types";
 
 export type ViewName = "home" | "ledger" | "save" | "flow" | "goal" | "setup" | "notice" | "rank";
 export const VIEWS: ViewName[] = ["home", "ledger", "save", "flow", "goal", "setup", "notice", "rank"];
@@ -21,6 +22,8 @@ export interface Model {
   isCur: boolean;
   refKey: Key; // 홈에서 보여줄 날 (이번 달이면 오늘)
   dayByKey: (k: Key) => DayInfo | undefined;
+  /** 생활비 계산용 기록 ('따로 모아 둔 돈' 여행 날 지출은 빠져요). 목록·삭제는 S.days를 써요 */
+  L: DaysMap;
 }
 
 export interface EntryPreset {
@@ -204,7 +207,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     let view = viewP;
     if (!view || view.start > shiftPeriod(cur, 1, cd).start) view = cur;
     const plan = planFor(S.periods, cfg, view);
-    const days = daysFor(view, plan, cfg.appts);
+    const days = daysFor(view, plan, cfg.appts, cfg.trips);
     const isCur = view.start === cur.start;
     return {
       cfg,
@@ -216,6 +219,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       isCur,
       refKey: isCur ? today : view.end < today ? view.end : view.start,
       dayByKey: (k: Key) => days.find((d) => d.key === k),
+      L: livingMap(S.days, cfg.trips),
     };
   }, [S, viewP, today]);
 

@@ -3,12 +3,14 @@ import { TxRow } from "../components/common";
 import { addDays, dOf, DOW, md, sd } from "../lib/date";
 import { short, won } from "../lib/format";
 import { getDay, isNoSpend, limitOf, spentOf } from "../lib/ledger";
+import { tripSpent } from "../lib/trip";
 import { useApp, useModel } from "../state/app";
 
 export function LedgerView() {
   const { S, today, openDay } = useApp();
-  const { days, weeks, view, dayByKey } = useModel();
-  const D = S.days;
+  const { days, weeks, view, dayByKey, L } = useModel();
+  const D = L; // 생활비 계산용
+  const R = S.days; // 실제 기록
   const lim = days.reduce((s, d) => s + limitOf(D, d), 0);
   const sp = days.reduce((s, d) => s + spentOf(D, d.key), 0);
 
@@ -27,23 +29,29 @@ export function LedgerView() {
       );
       continue;
     }
-    const s = spentOf(D, k), l = limitOf(D, info), ns = isNoSpend(D, k);
-    const cls = "cell" + (s > l ? " over" : "") + (k === today ? " today" : "") + (ns ? " nospend" : "") + (info.tag === "약속" ? " appt" : "");
+    const t = info.trip;
+    const s = t ? spentOf(R, k) : spentOf(D, k), l = limitOf(D, info), ns = isNoSpend(R, k);
+    const over = t ? tripSpent(R, t) > t.budget : s > l;
+    const pos = t ? (k === t.start || k === view.start || info.wd === 1 ? " t-start" : "") + (k === t.end || k === view.end || info.wd === 0 ? " t-end" : "") : "";
+    const cls = "cell" + (over ? " over" : "") + (k === today ? " today" : "") + (ns ? " nospend" : "") + (info.tag === "약속" ? " appt" : "") + (t ? " trip" + pos : "");
     cells.push(
       <button
         key={k}
         className={cls}
-        aria-label={md(d) + (info.tag === "약속" ? " 약속" : "") + " 한도 " + won(l) + ", 쓴 돈 " + won(s) + (ns ? ", 무지출" : "") + (s > l ? ", 한도 초과" : "")}
+        aria-label={
+          md(d) + (t ? " " + t.name + ", 쓴 돈 " + won(s) + (over ? ", 여행 예산 초과" : "") : (info.tag === "약속" ? " 약속" : "") + " 한도 " + won(l) + ", 쓴 돈 " + won(s) + (ns ? ", 무지출" : "") + (over ? ", 한도 초과" : ""))
+        }
         aria-current={k === today ? "date" : undefined}
         onClick={() => openDay(info.key)}
       >
         <span className="n">{label}</span>
-        <span className={"s" + (s || ns ? "" : " zero")}>{s ? "-" + short(s) : ns ? "무지출" : short(l)}</span>
+        <span className={"s" + (s || ns ? "" : " zero")}>{s ? "-" + short(s) : ns ? "무지출" : t ? (k === t.start || k === view.start ? t.name : "·") : short(l)}</span>
       </button>,
     );
   }
 
-  const withItems = days.filter((d) => getDay(D, d.key).items.length).reverse();
+  const withItems = days.filter((d) => getDay(R, d.key).items.length).reverse();
+  const tripsHere = [...new Map(days.filter((d) => d.trip).map((d) => [d.trip!.id, d.trip!])).values()];
 
   return (
     <div className="view">
@@ -70,7 +78,23 @@ export function LedgerView() {
             한도 초과
           </span>
           <span style={{ color: "var(--good)" }}>무지출</span>
+          {tripsHere.length > 0 && (
+            <span>
+              <i className="t-sw" />
+              여행
+            </span>
+          )}
         </div>
+        {tripsHere.map((t) => {
+          const sp = tripSpent(R, t);
+          return (
+            <div key={t.id} className={"trip-sum" + (sp > t.budget ? " over" : "")}>
+              <b>{t.name}</b>
+              <span>{sd(t.start) + "~" + sd(t.end) + " · " + (t.fund === "living" ? "생활비 안에서" : "따로 모아 둔 돈")}</span>
+              <span className="trip-amt">{won(sp) + " / " + won(t.budget)}</span>
+            </div>
+          );
+        })}
       </section>
 
       <section className="card" aria-label="주간 한도">
@@ -100,10 +124,10 @@ export function LedgerView() {
             <Fragment key={d.key}>
               <div className="group">
                 <span>{md(d.date) + " (" + DOW[d.wd] + ")"}</span>
-                <span>{"-" + won(spentOf(D, d.key))}</span>
+                <span>{"-" + won(spentOf(R, d.key))}</span>
               </div>
               <ul className="tx">
-                {getDay(D, d.key).items.map((it) => (
+                {getDay(R, d.key).items.map((it) => (
                   <TxRow key={it.id} it={it} onClick={() => openDay(d.key)} />
                 ))}
               </ul>
