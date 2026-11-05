@@ -4,7 +4,7 @@ import { RankCard } from "../components/RankCard";
 import { useState } from "react";
 import { Sheet, SheetHead } from "../components/Sheet";
 import { AccountFields, ShareButtons } from "../components/SettlePanel";
-import { settleMessage } from "../lib/settle";
+import { attendNote, settleMessage, settleMessageFrom } from "../lib/settle";
 import { loadAccount } from "../state/account";
 import type { Item } from "../lib/types";
 import { catVar } from "../lib/cats";
@@ -65,7 +65,16 @@ export function HomeView() {
 
   const [msgFor, setMsgFor] = useState<{ it: Item; key: string } | null>(null);
   const [, bumpAcc] = useState(0);
-  const msgText = msgFor
+  const msgText = msgFor?.it.settle?.amounts
+    ? settleMessageFrom({
+        title: msgFor.it.memo || msgFor.it.cat,
+        date: msgFor.key,
+        total: msgFor.it.amount,
+        rounds: msgFor.it.rounds || [],
+        lines: msgFor.it.settle.names.map((n, i) => ({ name: n, amount: msgFor.it.settle!.amounts![i], note: attendNote(msgFor.it.settle!.attend?.[i], (msgFor.it.rounds || []).length) })),
+        account: loadAccount(),
+      })
+    : msgFor
     ? settleMessage({
         title: msgFor.it.memo || msgFor.it.cat,
         date: msgFor.key,
@@ -232,7 +241,7 @@ export function HomeView() {
           <h2>친구한테 받을 돈</h2>
           <span className="head-r">
             <b>{won(oweSum)}</b>
-            <button className="link" onClick={() => openEntry(today, { settle: true })}>
+            <button className="link" onClick={() => go("settle")}>
               정산하기
             </button>
           </span>

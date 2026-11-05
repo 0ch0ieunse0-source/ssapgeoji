@@ -60,3 +60,65 @@ export function settleMessage(s: SettleInput): string {
   }
   return lines.join("\n");
 }
+
+/* ---------- 정산하기 페이지 (단계별) ---------- */
+
+export interface ShareInput {
+  total: number;
+  rounds: { amount: number }[]; // 차수별이면 2개 이상, 아니면 []
+  people: number; // 나 포함 인원 (나 = 0번)
+  attend?: boolean[][]; // 차수별: [사람][차수] 참여 여부 (없으면 모두 참여)
+  roundUp100?: boolean; // 친구 몫을 100원 단위로 올림 (남는 돈은 내 몫에서 빠져요)
+  custom?: (number | null)[]; // 직접 입력: [사람] 금액 (0번 나는 무시, 자동 계산)
+}
+
+/** 사람마다 낼 금액 [나, 친구1, 친구2…]. 끝전은 내 몫이 맡아서 합계가 정확히 총액이에요 */
+export function computeShares(s: ShareInput): { shares: number[]; mine: number; error: string | null } {
+  const n = Math.max(1, s.people);
+  const up = (x: number) => (s.roundUp100 ? Math.ceil(x / 100) * 100 : Math.round(x));
+  let raw: number[];
+  if (s.rounds.length > 1) {
+    raw = Array.from({ length: n }, () => 0);
+    s.rounds.forEach((r, k) => {
+      const who = Array.from({ length: n }, (_, i) => s.attend?.[i]?.[k] ?? true);
+      const cnt = who.filter(Boolean).length;
+      if (!cnt) return;
+      who.forEach((w, i) => w && (raw[i] += r.amount / cnt));
+    });
+  } else raw = Array.from({ length: n }, () => s.total / n);
+  const friends = raw.slice(1).map((x, i) => {
+    const c = s.custom?.[i + 1];
+    return typeof c === "number" ? c : up(x);
+  });
+  const mine = s.total - friends.reduce((a, b) => a + b, 0);
+  return { shares: [mine, ...friends], mine, error: mine < 0 ? "친구 몫 합계가 총액보다 많아요." : null };
+}
+
+/** 정해진 금액으로 메시지 만들기 */
+export function settleMessageFrom(m: {
+  title: string;
+  date: Key;
+  total: number;
+  rounds: { amount: number; people: number }[];
+  lines: { name: string; amount: number; note?: string }[];
+  account?: SettleAccount | null;
+}): string {
+  const out: string[] = ["[정산] " + (m.title || "정산") + " (" + sd(m.date) + ")", "총 " + won(m.total)];
+  if (m.rounds.length > 1) m.rounds.forEach((r, k) => out.push(k + 1 + "차 " + won(r.amount) + " · " + r.people + "명"));
+  out.push("");
+  m.lines.forEach((l) => out.push(l.name + " " + won(l.amount) + (l.note ? " (" + l.note + ")" : "")));
+  const a = m.account;
+  if (a && (a.number.trim() || a.link.trim())) {
+    out.push("");
+    if (a.number.trim()) out.push("💳 " + [a.bank.trim(), a.number.trim()].filter(Boolean).join(" ") + (a.holder.trim() ? " (" + a.holder.trim() + ")" : ""));
+    if (a.link.trim()) out.push("🔗 " + a.link.trim());
+  }
+  return out.join("\n");
+}
+
+/** 차수 참여 표시: "1·3차만" (모두 참여면 "") */
+export const attendNote = (att: boolean[] | undefined, rounds: number) => {
+  if (!att || rounds < 2 || att.every(Boolean)) return "";
+  const j = att.map((a, k) => (a ? k + 1 : 0)).filter(Boolean);
+  return j.length ? j.join("·") + "차만" : "참여 안 함";
+};

@@ -9,8 +9,8 @@ import { livingMap } from "../lib/trip";
 import { loadData, saveData } from "../lib/storage";
 import type { Data, DaysMap, Key, Period, Plan, Settings } from "../lib/types";
 
-export type ViewName = "home" | "ledger" | "save" | "flow" | "goal" | "setup" | "notice" | "rank";
-export const VIEWS: ViewName[] = ["home", "ledger", "save", "flow", "goal", "setup", "notice", "rank"];
+export type ViewName = "home" | "ledger" | "save" | "flow" | "goal" | "setup" | "notice" | "rank" | "settle";
+export const VIEWS: ViewName[] = ["home", "ledger", "save", "flow", "goal", "setup", "notice", "rank", "settle"];
 
 /** 설정이 끝난 뒤 화면에서 쓰는 값 (지금 보고 있는 달 기준) */
 export interface Model {
@@ -33,8 +33,6 @@ export interface EntryPreset {
   amount?: number;
   memo?: string;
   cat?: string;
-  /** 정산하기로 열기: 친구 몫 나누기와 정산 메시지를 펼친 채로 */
-  settle?: boolean;
 }
 interface EntryState {
   open: boolean;

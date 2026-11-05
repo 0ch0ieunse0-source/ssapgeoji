@@ -35,3 +35,28 @@ describe("정산 메시지", () => {
     expect(settleMessage(s).split("\n").slice(-1)[0]).toBe("1인당 25,000원 (모든 차수 참여 기준)");
   });
 });
+
+describe("정산하기 페이지 계산", async () => {
+  const { computeShares, settleMessageFrom, attendNote } = await import("./settle");
+  it("1/N: 끝전은 내 몫이 맡아서 합계가 총액", () => {
+    expect(computeShares({ total: 40000, rounds: [], people: 3 })).toEqual({ shares: [13334, 13333, 13333], mine: 13334, error: null });
+  });
+  it("100원 올림: 친구 몫을 올리고 그만큼 내 몫이 줄어요", () => {
+    expect(computeShares({ total: 40000, rounds: [], people: 3, roundUp100: true }).shares).toEqual([13200, 13400, 13400]);
+  });
+  it("차수별: 차수마다 참여한 사람끼리 나눠요", () => {
+    const r = computeShares({ total: 90000, rounds: [{ amount: 60000 }, { amount: 30000 }], people: 4, attend: [[true, true], [true, true], [true, true], [true, false]] });
+    expect(r.shares).toEqual([25000, 25000, 25000, 15000]);
+  });
+  it("직접 입력: 친구 금액은 그대로, 나는 나머지", () => {
+    expect(computeShares({ total: 40000, rounds: [], people: 3, custom: [null, 5000, null] }).shares).toEqual([21667, 5000, 13333]);
+    expect(computeShares({ total: 10000, rounds: [], people: 2, custom: [null, 12000] }).error).toBe("친구 몫 합계가 총액보다 많아요.");
+  });
+  it("메시지와 차수 표시", () => {
+    expect(attendNote([true, false], 2)).toBe("1차만");
+    expect(attendNote([true, true], 2)).toBe("");
+    expect(settleMessageFrom({ title: "치킨", date: "2026-11-05", total: 30000, rounds: [], lines: [{ name: "민수", amount: 10000 }], account: null })).toBe(
+      ["[정산] 치킨 (11/5)", "총 30,000원", "", "민수 10,000원"].join("\n"),
+    );
+  });
+});

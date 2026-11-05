@@ -520,3 +520,41 @@ html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adj
 
 /* 추가: 카드 머리 오른쪽 (금액 + 작은 버튼) */
 .card-head .head-r { display: inline-flex; align-items: baseline; gap: 10px; }
+
+/* 추가: 정산하기 페이지 */
+.st-head { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 0 2px; }
+.st-head h1 { font-size: 20px; font-weight: 700; margin: 0; letter-spacing: -0.02em; }
+.st-head h1:focus, .settle-view:focus { outline: none; }
+.st-head .pbtn { background: var(--surface); box-shadow: var(--shadow); }
+.st-q { font-size: 19px !important; letter-spacing: -0.02em; }
+.st-amt #stAmount { background: none; border: none; padding: 4px 0; font-size: 32px; font-weight: 700; letter-spacing: -0.02em; height: auto; }
+.st-amt #stAmount:focus-visible { outline: none; }
+.st-round { display: grid; grid-template-columns: 34px minmax(0, 1fr) 32px; gap: 8px; align-items: center; }
+.st-round .rl, .att-row .rl { font-size: 13.5px; font-weight: 700; color: var(--muted); }
+.st-total { font-size: 15px; font-weight: 700; text-align: right; }
+.st-total.big { font-size: 26px; text-align: left; letter-spacing: -0.02em; }
+.st-next { position: sticky; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); z-index: 5; box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 28%, transparent); }
+.av { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 15px; flex: none; }
+.av.off { filter: grayscale(1); opacity: .35; }
+.people { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 12px; }
+.people li { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 58px; text-align: center; }
+.people li b { font-size: 13px; font-weight: 600; max-width: 58px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.people .del { padding: 0; font-size: 11.5px; }
+.att-row { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 8px; align-items: start; padding: 8px 0; border-top: 1px solid var(--line); }
+.att-row:first-of-type { border-top: none; }
+.att-people { display: flex; flex-wrap: wrap; gap: 10px; }
+.att { border: none; background: none; padding: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; font-size: 12px; color: var(--ink); }
+.att .av { width: 34px; height: 34px; font-size: 13px; }
+.att[aria-pressed="false"] span { color: var(--muted); text-decoration: line-through; }
+.shares { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.shares li { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+.shares li:first-child { border-top: none; }
+.shares li.me { background: var(--accent-soft); border-radius: 14px; padding: 10px; border-top-color: transparent; }
+.shares li.me + li { border-top-color: transparent; }
+.shares .t { display: flex; flex-direction: column; min-width: 0; }
+.shares .t b { font-weight: 600; }
+.shares .t span { font-size: 12.5px; color: var(--muted); }
+.shares .amt { font-size: 17px; font-weight: 700; }
+.shares input { width: 130px; }
+.st-done { align-items: center; text-align: center; }
+.st-check { width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: var(--surface); display: grid; place-items: center; font-size: 28px; font-weight: 700; }
