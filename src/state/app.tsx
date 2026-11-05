@@ -77,7 +77,8 @@ interface AppValue {
   formNonce: number;
   bumpForm: () => void;
   guide: { open: boolean; safariOnly: boolean };
-  openGuide: () => void;
+  /** 사용법 열기 (safariOnly: 홈 화면에 추가하는 법만) */
+  openGuide: (safariOnly?: boolean) => void;
   closeGuide: () => void;
   /** 사용법 마지막 장까지 봤으면(건너뛰기 포함) 다시 안 보여줘요 */
   markGuideSeen: () => void;
@@ -143,7 +144,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [dayKey, setDayKey] = useState<Key | null>(null);
   const [formNonce, setFormNonce] = useState(0);
   const [guide, setGuide] = useState(initialGuide);
-  const openGuide = useCallback(() => setGuide({ open: true, safariOnly: false }), []);
+  const openGuide = useCallback((safariOnly = false) => setGuide({ open: true, safariOnly }), []);
   const markGuideSeen = useCallback(() => {
     // 처음 쓰는 사람은 예전 공지를 새 소식으로 보여주지 않아요
     if (safeGet(() => localStorage, ONBOARD_KEY) !== "1" && !hasNoticeRecord()) markAllNoticesRead();

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { detectBrowser, IN_APP_NAME, kakaoExternal, type BrowserEnv } from "../lib/browser";
 import { useApp } from "../state/app";
 import { Icon } from "./common";
+import { AndroidSteps, InAppSteps, IosOtherSteps, IosSteps } from "./InstallSteps";
 
 const MASCOT = import.meta.env.BASE_URL + "mascot.png";
 
@@ -51,75 +52,25 @@ const SLIDES: Slide[] = [
 
 function SafariGuide({ env, onCopy }: { env: BrowserEnv; onCopy: () => void }) {
   const browser = env.os === "android" ? "Chrome" : "Safari";
-  if (env.inApp) {
-    const app = IN_APP_NAME[env.inApp];
-    return (
-      <>
-        <div className="alert bad" role="alert">
-          {"지금 " + app + " 안에서 열려 있어요. 여기서 적은 기록은 앱을 닫거나 업데이트할 때 사라질 수 있어요."}
-        </div>
-        {env.inApp === "kakao" ? (
-          <ol className="onb-steps">
-            <li>{"아래 '" + browser + "로 열기'를 눌러요."}</li>
-            <li>{browser + "에서 열리면 홈 화면에 추가해요."}</li>
-          </ol>
-        ) : (
-          <ol className="onb-steps">
-            <li>화면 구석의 ··· 또는 공유 버튼을 눌러요.</li>
-            <li>{"'" + browser + "로 열기' 또는 '기본 브라우저로 열기'를 눌러요."}</li>
-            <li>
-              메뉴가 없으면 링크를 복사해서 {browser} 주소창에 붙여 넣어요.{" "}
-              <button className="link" onClick={onCopy}>
-                링크 복사
-              </button>
-            </li>
-          </ol>
-        )}
-      </>
-    );
-  }
-  if (env.standalone)
-    return <p className="hint">홈 화면 아이콘으로 잘 열었어요. 앞으로도 이 아이콘으로 열어 주세요.</p>;
-  if (env.os === "ios" && !env.safari)
-    return (
-      <>
-        <div className="alert bad">아이폰에서는 Safari로 열어야 홈 화면에 추가하고 기록을 오래 지킬 수 있어요.</div>
-        <ol className="onb-steps">
-          <li>
-            링크를 복사해요.{" "}
-            <button className="link" onClick={onCopy}>
-              링크 복사
-            </button>
-          </li>
-          <li>Safari 주소창에 붙여 넣어 열어요.</li>
-        </ol>
-      </>
-    );
+  if (env.inApp) return <InAppSteps app={IN_APP_NAME[env.inApp]} browser={browser} kakao={env.inApp === "kakao"} onCopy={onCopy} isIos={env.os !== "android"} />;
+  if (env.standalone) return <p className="hint">홈 화면 아이콘으로 잘 열었어요. 앞으로도 이 아이콘으로 열어 주세요.</p>;
+  if (env.os === "ios" && !env.safari) return <IosOtherSteps onCopy={onCopy} />;
   if (env.os === "ios")
     return (
       <>
-        <ol className="onb-steps">
-          <li>화면 아래 공유 버튼(네모에 위쪽 화살표)을 눌러요.</li>
-          <li>'홈 화면에 추가'를 눌러요.</li>
-          <li>이제 홈 화면의 거지노트 아이콘으로 열어요.</li>
-        </ol>
+        <IosSteps />
         <p className="hint">Safari와 홈 화면 아이콘은 기록을 따로 저장해요. 한쪽으로만 쓰세요.</p>
       </>
     );
-  if (env.os === "android")
-    return (
-      <ol className="onb-steps">
-        <li>Chrome 오른쪽 위 ⋮ 메뉴를 눌러요.</li>
-        <li>'홈 화면에 추가'를 눌러요.</li>
-        <li>이제 홈 화면의 거지노트 아이콘으로 열어요.</li>
-      </ol>
-    );
+  if (env.os === "android") return <AndroidSteps />;
   return (
     <>
-      <p className="hint">아이폰은 Safari, 안드로이드는 Chrome으로 이 링크를 열고 홈 화면에 추가하면 앱처럼 쓸 수 있어요.</p>
+      <p className="hint">폰에서 이 링크를 열어 주세요. 아이폰은 Safari, 안드로이드는 Chrome으로 열고 홈 화면에 추가하면 앱처럼 쓸 수 있어요.</p>
       <button className="btn line" onClick={onCopy}>
         링크 복사
       </button>
+      <p className="hint vthen">아이폰 Safari에서는 이렇게 해요</p>
+      <IosSteps />
     </>
   );
 }
@@ -196,7 +147,7 @@ export function Onboarding() {
             </button>
           )}
         </div>
-        <div className="onb-art">{slide.art}</div>
+        <div className={"onb-art" + (last ? " small" : "")}>{slide.art}</div>
         <div className="onb-text">
           <h2 id="onbTitle" ref={headRef} tabIndex={-1}>
             {slide.title}
@@ -228,7 +179,7 @@ export function Onboarding() {
           )}
           {last && (
             <button className={env.inApp ? "btn line" : "btn"} onClick={closeGuide}>
-              {env.inApp ? "그래도 여기서 볼게요" : "시작하기"}
+              {env.inApp ? "그래도 여기서 볼게요" : guide.safariOnly ? "확인" : "시작하기"}
             </button>
           )}
         </div>

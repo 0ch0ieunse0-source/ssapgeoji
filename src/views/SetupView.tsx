@@ -560,7 +560,7 @@ export function SetupView({ section = "" }: { section?: string }) {
         {s6}
         {s7}
         {saveArea}
-        <button className="link" style={{ alignSelf: "center" }} onClick={openGuide}>
+        <button className="link" style={{ alignSelf: "center" }} onClick={() => openGuide()}>
           사용법 다시 보기
         </button>
       </div>
@@ -644,7 +644,8 @@ export function SetupView({ section = "" }: { section?: string }) {
       <section className="card menu" aria-label="기록과 도움말">
         {row("data", "기록 보관", "백업 저장·불러오기, 모든 기록 지우기", () => go("setup/data"))}
         {row("notice", "공지사항", "", () => go("notice"), unread ? <span className="badge">{"새 소식 " + unread}</span> : undefined)}
-        {row("guide", "사용법 다시 보기", "", openGuide)}
+        {row("install", "홈 화면에 추가하는 법", "Safari·Chrome에서 앱처럼 쓰기", () => openGuide(true))}
+        {row("guide", "사용법 다시 보기", "", () => openGuide())}
       </section>
     </div>
   );
