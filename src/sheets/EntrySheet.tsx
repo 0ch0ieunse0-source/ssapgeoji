@@ -215,7 +215,7 @@ export function EntrySheet() {
               ? (byRounds ? "총 " + won(n) + " 결제 · " : "") + "내 몫 " + won(shareNow) + "만 한도에서 빠지고, " + won(n - shareNow) + "은 받을 돈으로 적혀요."
               : "내 몫만 한도에서 빠지고, 나머지는 받을 돈으로 따로 적혀요."}
           </p>
-          {n > 0 && (
+          {(
             <SettlePanel
               input={{
                 title: memo.trim() || cat,

@@ -105,7 +105,8 @@ export function SettlePanel({
       <button className="settle-toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
         정산 메시지 만들기 <span className="badge warn">베타</span> <span aria-hidden="true">{open ? "▴" : "▾"}</span>
       </button>
-      {open && (
+      {open && input.total <= 0 && <p className="hint">위에 금액을 넣으면 정산 메시지가 만들어져요.</p>}
+      {open && input.total > 0 && (
         <>
           <div className="lbl">친구 이름 (선택)</div>
           <div className="row">
