@@ -1,7 +1,58 @@
-import { sd } from "../lib/date";
+import { useEffect, useState } from "react";
+import { dOf, md, sd } from "../lib/date";
+import { markNoticesSeen, NOTICES, readNoticeSeen, unreadCount } from "../notices";
+import { Sheet, SheetHead } from "./Sheet";
 import { shiftPeriod } from "../lib/period";
 import { useApp, type ViewName } from "../state/app";
 import { Icon } from "./common";
+
+function NoticeButton() {
+  const [open, setOpen] = useState(false);
+  const [seen, setSeen] = useState(readNoticeSeen);
+  const unread = unreadCount(NOTICES, seen);
+  const show = () => {
+    setOpen(true);
+  };
+  const close = () => {
+    markNoticesSeen();
+    setSeen(readNoticeSeen());
+    setOpen(false);
+  };
+  useEffect(() => {
+    if (!open) return;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [open]);
+  return (
+    <>
+      <button className="gear" aria-label={unread ? "공지사항, 새 소식 " + unread + "개" : "공지사항"} onClick={show}>
+        {Icon.bell}
+        {unread > 0 && <span className="dot" aria-hidden="true" />}
+      </button>
+      <Sheet open={open} onClose={close} labelledBy="noticeTitle">
+        <SheetHead id="noticeTitle" title="공지사항" onClose={close} />
+        <ul className="notices">
+          {NOTICES.map((n, i) => (
+            <li key={n.id}>
+              <div className="nhead">
+                <span className="k">{md(dOf(n.date))}</span>
+                {i < unread && <span className="badge">새 소식</span>}
+              </div>
+              <b>{n.title}</b>
+              <ul>
+                {n.body.map((line, k) => (
+                  <li key={k}>{line}</li>
+                ))}
+              </ul>
+            </li>
+          ))}
+        </ul>
+      </Sheet>
+    </>
+  );
+}
 
 export function TopBar() {
   const { model, go } = useApp();
@@ -13,6 +64,7 @@ export function TopBar() {
         <div className="status" data-state="local">
           이 기기에 저장돼요
         </div>
+        {model && <NoticeButton />}
         {model && (
           <button className="gear" aria-label="설정" onClick={() => go("setup")}>
             {Icon.gear}

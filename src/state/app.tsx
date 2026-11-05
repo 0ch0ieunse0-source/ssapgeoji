@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { detectBrowser } from "../lib/browser";
+import { markNoticesSeen, NOTICE_KEY } from "../notices";
 import { kOf, startOfToday } from "../lib/date";
 import { getDay, setDay } from "../lib/ledger";
 import { daysFor, makePlan, periodOf, planFor, shiftPeriod, weeksOf, type DayInfo } from "../lib/period";
@@ -126,7 +127,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [formNonce, setFormNonce] = useState(0);
   const [guide, setGuide] = useState(initialGuide);
   const openGuide = useCallback(() => setGuide({ open: true, safariOnly: false }), []);
-  const markGuideSeen = useCallback(() => safeSet(() => localStorage, ONBOARD_KEY), []);
+  const markGuideSeen = useCallback(() => {
+    // 처음 쓰는 사람은 예전 공지를 새 소식으로 보여주지 않아요
+    if (safeGet(() => localStorage, ONBOARD_KEY) !== "1" && safeGet(() => localStorage, NOTICE_KEY) == null) markNoticesSeen();
+    safeSet(() => localStorage, ONBOARD_KEY);
+  }, []);
   const closeGuide = useCallback(() => {
     safeSet(() => localStorage, ONBOARD_KEY);
     if (detectBrowser(navigator.userAgent).inApp) safeSet(() => sessionStorage, INAPP_OK_KEY);

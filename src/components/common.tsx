@@ -78,6 +78,12 @@ export function BigWon({ n }: { n: number }) {
 
 const svg = { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "aria-hidden": true } as const;
 export const Icon = {
+  bell: (
+    <svg {...svg} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 9a6 6 0 0 1 12 0c0 5 2 6.5 2 6.5H4S6 14 6 9z" />
+      <path d="M10 19.5a2 2 0 0 0 4 0" />
+    </svg>
+  ),
   gear: (
     <svg {...svg} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="3" />

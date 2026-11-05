@@ -282,3 +282,13 @@ body { padding-top: calc(18px + env(safe-area-inset-top, 0px)); }
 .onb-actions:has(> .btn.line + .btn) > .btn { flex: 1; }
 .onb-a { display: flex; align-items: center; justify-content: center; text-decoration: none; }
 .onb-text .alert { margin: 0; }
+
+/* 추가: 공지사항 */
+.gear { position: relative; }
+.gear .dot { position: absolute; top: 6px; right: 7px; width: 8px; height: 8px; border-radius: 50%; background: var(--over); box-shadow: 0 0 0 2px var(--surface); }
+.notices { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.notices > li { display: flex; flex-direction: column; gap: 4px; padding: 14px 0; border-top: 1px solid var(--line); }
+.notices > li:first-child { border-top: none; padding-top: 0; }
+.notices .nhead { display: flex; align-items: center; gap: 8px; }
+.notices b { font-weight: 700; font-size: 15.5px; }
+.notices ul { margin: 2px 0 0; padding-left: 18px; color: var(--muted); font-size: 14px; display: flex; flex-direction: column; gap: 3px; }
