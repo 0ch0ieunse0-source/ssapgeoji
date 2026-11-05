@@ -1,11 +1,22 @@
 /// <reference types="vitest/config" />
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
+
+// 빌드할 때마다 새 버전 이름을 만들어요. 앱은 version.json과 비교해서 새 버전이 있으면 알려줘요.
+const APP_VERSION = new Date().toISOString();
+const versionFile = (): Plugin => ({
+  name: "version-json",
+  apply: "build",
+  generateBundle() {
+    this.emitFile({ type: "asset", fileName: "version.json", source: JSON.stringify({ version: APP_VERSION }) });
+  },
+});
 
 // GitHub Pages 주소가 https://아이디.github.io/ssapgeoji/ 이라서 base를 저장소 이름으로 맞춰요.
 export default defineConfig({
   base: "/ssapgeoji/",
-  plugins: [react()],
+  plugins: [react(), versionFile()],
+  define: { __APP_VERSION__: JSON.stringify(APP_VERSION) },
   test: {
     include: ["src/**/*.test.ts"],
     env: { TZ: "Asia/Seoul" },
