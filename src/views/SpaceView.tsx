@@ -206,7 +206,7 @@ export function SpaceView({ sub = "" }: { sub?: string }) {
   const mine = rows?.find((r) => r.code === me.code) || null;
 
   // 친구 방
-  if (sub && sub !== me.code) {
+  if (sub && sub !== me.code && sub !== "friends") {
     const f = rows?.find((r) => r.code === sub);
     const isFriend = me.friends.includes(sub);
     const give = async () => {
@@ -227,7 +227,7 @@ export function SpaceView({ sub = "" }: { sub?: string }) {
     };
     return (
       <div className="view">
-        <PageHead title={f ? f.nickname + "의 방" : "친구 방"} fallback="space" />
+        <PageHead title={f ? f.nickname + "의 방" : "친구 방"} fallback="space/friends" />
         {!f && !err && <p className="hint">불러오는 중…</p>}
         {err && <p className="hint">불러오지 못했어요. 잠시 뒤 다시 열어 주세요.</p>}
         {!isFriend && rows && <p className="hint">친구 목록에 없는 방이에요.</p>}
@@ -267,72 +267,103 @@ export function SpaceView({ sub = "" }: { sub?: string }) {
     );
   }
 
-  // 내 스페이스
   const friends = (rows || []).filter((r) => r.code !== me.code).sort((a, b) => b.coins - a.coins);
+
+  // 친구 스페이스 목록 (별도 페이지)
+  if (sub === "friends")
+    return (
+      <div className="view">
+        <PageHead title="친구 스페이스" fallback="space" />
+        {err && <p className="hint warn-note">불러오지 못했어요. 잠시 뒤 다시 열어 주세요.</p>}
+        <section className="card">
+          <div className="card-head">
+            <h2>{"친구 " + me.friends.length + "명"}</h2>
+            <button className="link" onClick={() => go("rank/add")}>
+              + 친구 추가
+            </button>
+          </div>
+          {!me.friends.length && <p className="hint">친구를 추가하면 친구 방에 놀러 가서 동전을 줄 수 있어요. 내 친구 코드: {me.code}</p>}
+          <ul className="friend-rooms">
+            {friends.map((f) => (
+              <li key={f.code}>
+                <button onClick={() => go(`space/${f.code}`)}>
+                  <RoomScene tier={tierOf(f.coins)} className="mini" />
+                  <span className="fr-who">
+                    <Avatar src={f.avatar} name={f.nickname} size={28} />
+                    <b>{f.nickname}</b>
+                  </span>
+                  <span className="k">
+                    {ROOM_TIERS[tierOf(f.coins)].name + " · "}
+                    {Icon.coin}
+                    {f.coins}
+                  </span>
+                </button>
+              </li>
+            ))}
+            {rows === null && codes.length > 1 && <li className="hint">불러오는 중…</li>}
+          </ul>
+        </section>
+      </div>
+    );
+
+  // 내 스페이스 (스페이스 탭의 주인공)
   const t = tierOf(mine?.coins || 0);
   return (
     <div className="view">
       {err && (
         <p className="hint warn-note">
-          스페이스를 불러오지 못했어요. 잠시 뒤 다시 열어 주세요. (서버에 스페이스 기능이 아직 없을 수도 있어요)
+          스페이스를 불러오지 못했어요. 잠시 뒤 다시 열어 주세요.
         </p>
       )}
-      <section className="card room-card">
-        <RoomScene tier={t} />
+      <section className="my-room">
+        <div className="my-room-scene">
+          <RoomScene tier={t} />
+          <span className="my-room-tier">{t + 1 + "단계 · " + ROOM_TIERS[t].name}</span>
+        </div>
         <div className="room-who">
           {/* 사진은 마이페이지에서만 바꿔요 */}
-          <Avatar src={mine?.avatar} name={me.nickname} size={64} />
+          <Avatar src={mine?.avatar} name={me.nickname} size={56} />
           <span>
             <b>{me.nickname + "의 방"}</b>
-            <span className="k">{ROOM_TIERS[t].name + " · " + ROOM_TIERS[t].desc}</span>
+            <span className="k">{ROOM_TIERS[t].desc}</span>
           </span>
         </div>
         {mine && mine.coin_lost > 0 && <p className="hint warn-note">{"지난 시즌 파산해서 동전 " + mine.coin_lost + "개를 잃었어요 💀"}</p>}
         <CoinBar coins={mine?.coins || 0} />
-        <div className="row">
-          <button className="btn line" style={{ flex: 1 }} onClick={() => go("space/tiers")}>
-            방 단계 보기
-          </button>
-          <button className="btn line" style={{ flex: 1 }} onClick={() => go("rank")}>
-            랭킹 보기
-          </button>
-        </div>
       </section>
 
-      <section className="card">
-        <div className="card-head">
-          <h2>친구 방</h2>
-          <button className="link" onClick={() => go("rank/add")}>
-            + 친구 추가
-          </button>
-        </div>
-        {!me.friends.length && <p className="hint">친구를 추가하면 친구 방에 놀러 가서 동전을 줄 수 있어요. 내 친구 코드: {me.code}</p>}
-        <ul className="friend-rooms">
-          {friends.map((f) => (
-            <li key={f.code}>
-              <button onClick={() => go(`space/${f.code}`)}>
-                <RoomScene tier={tierOf(f.coins)} className="mini" />
-                <span className="fr-who">
-                  <Avatar src={f.avatar} name={f.nickname} size={28} />
-                  <b>{f.nickname}</b>
-                </span>
-                <span className="k">
-                  {ROOM_TIERS[tierOf(f.coins)].name + " · "}
-                  {Icon.coin}
-                  {f.coins}
-                </span>
-              </button>
-            </li>
+      <button className="visit-btn" onClick={() => go("space/friends")}>
+        <span className="visit-avs" aria-hidden="true">
+          {friends.slice(0, 4).map((f) => (
+            <Avatar key={f.code} src={f.avatar} name={f.nickname} size={34} />
           ))}
-          {rows === null && codes.length > 1 && <li className="hint">불러오는 중…</li>}
-        </ul>
-      </section>
+          {!friends.length && <i>{Icon.space}</i>}
+        </span>
+        <span className="visit-t">
+          <b>친구 스페이스 놀러 가기</b>
+          <span>{me.friends.length ? "친구 " + me.friends.length + "명 · 동전 주고 오기" : "친구를 추가하고 놀러 가요"}</span>
+        </span>
+        <span className="chev" aria-hidden="true">
+          {Icon.next}
+        </span>
+      </button>
 
       <WishList wish={extra[me.code] ? extra[me.code].wish : null} mine />
       <Visits code={me.code} reload={reload} />
-      <button className="link" style={{ alignSelf: "center" }} onClick={() => go("setup/share")}>
-        친구에게 보여줄 것 고르기
-      </button>
+
+      <div className="space-links">
+        <button className="link" onClick={() => go("space/tiers")}>
+          방 단계
+        </button>
+        <span aria-hidden="true">·</span>
+        <button className="link" onClick={() => go("rank")}>
+          랭킹
+        </button>
+        <span aria-hidden="true">·</span>
+        <button className="link" onClick={() => go("setup/share")}>
+          공개 설정
+        </button>
+      </div>
     </div>
   );
 }
