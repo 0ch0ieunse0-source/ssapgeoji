@@ -672,3 +672,34 @@ html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adj
 .page-head h1, .st-head h1 { font-size: 17px; font-weight: 700; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .page-head .pbtn, .st-head .pbtn { background: transparent; box-shadow: none; width: 44px; height: 44px; }
 .st-head > .k { text-align: right; }
+
+/* ── 그림자 정리: 바탕 위에 놓인 것(카드·버튼·달 이동 바)은 그림자 없이, 떠 있는 것만 연하게 ── */
+.card, .stat, .gear, .pnav, .seg button[aria-pressed="true"], .page-head .pbtn, .st-head .pbtn { box-shadow: none; }
+.fab { box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 22%, transparent); }
+.tabbar { box-shadow: 0 2px 12px rgba(30,20,40,.07); }
+.st-next { box-shadow: none; }
+.sheet.pop { box-shadow: 0 12px 32px rgba(0,0,0,.14); }
+.gear { background: transparent; }
+.gear:active { background: var(--surface-2); }
+.pnav { border: 1px solid var(--line); }
+
+/* ── 하루 카드 (시안 C): 일정 블록을 누르면 아래에서 한도 시트 ── */
+.dc-lbl { font-size: 13px; color: var(--muted); margin-bottom: -6px; }
+.dc-ev { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 4px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 12px 12px 0; border-radius: 12px; cursor: pointer; }
+.dc-ev:hover { background: var(--surface-2); }
+.dc-ev:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.dc-ev > i { align-self: stretch; border-radius: 4px; background: var(--accent); }
+.dc-ev.plain > i { background: var(--line); }
+.dc-ev .t { display: flex; flex-direction: column; min-width: 0; }
+.dc-ev .t b { font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dc-ev .t span { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dc-ev .chev { color: var(--muted); font-size: 20px; }
+.dc-sum { background: none; padding: 0; font-weight: 500; color: var(--muted); }
+.dc-sum b, .dc-sum .won, .dc-sum span > span { color: var(--ink); font-weight: 700; }
+.lim-big { display: flex; align-items: baseline; gap: 4px; border-bottom: 2px solid var(--accent); padding-bottom: 6px; }
+.lim-big input { flex: 1 1 auto; background: none; border: none; padding: 0; font-size: 32px; font-weight: 700; letter-spacing: -0.02em; height: auto; text-align: right; }
+.lim-big input:focus-visible { outline: none; }
+.lim-big span { font-size: 18px; color: var(--muted); }
+.lim-acts { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; }
+.lim-acts .btn { min-height: 52px; }
+.btn.gray { background: var(--surface-2); color: var(--ink); }

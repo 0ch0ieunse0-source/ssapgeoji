@@ -20,6 +20,13 @@ export function DaySheet() {
   const d = model && dayKey ? model.dayByKey(dayKey) : undefined;
   const [limitV, setLimitV] = useState("");
   const [more, setMore] = useState(false);
+  // 일정 블록을 누르면 아래에서 올라오는 한도 시트
+  const [limitKey, setLimitKey] = useState<string | null>(null);
+  const openLimit = (k: string) => {
+    setLimitV(l.toLocaleString("ko-KR"));
+    setLimitKey(k);
+    window.setTimeout(() => limRef.current?.focus(), 60);
+  };
   const limRef = useRef<HTMLInputElement>(null);
   const l = d ? limitOf(S.days, d) : 0;
 
@@ -30,7 +37,10 @@ export function DaySheet() {
   useEffect(() => {
     if (document.activeElement !== limRef.current) setLimitV(l.toLocaleString("ko-KR"));
   }, [l, dayKey, S]);
-  useEffect(() => setMore(false), [dayKey]);
+  useEffect(() => {
+    setMore(false);
+    setLimitKey(null);
+  }, [dayKey]);
 
   const content = (() => {
     if (!d || !model) return null;
@@ -41,13 +51,7 @@ export function DaySheet() {
     const trip = d.trip;
     const tSpent = trip ? tripSpent(S.days, trip) : 0;
     const ns = isNoSpend(S.days, d.key);
-    const sub = [dday(d.key, today), isAppt ? cfg.apptNames?.[d.key] || "약속" : "", trip ? trip.name : ""].filter(Boolean).join(" · ");
-
-    const saveLimit = (v: number | null) => {
-      update((data) => setDay(data.days, d.key, { limit: v }));
-      limRef.current?.blur();
-      toast(v == null ? "원래 한도로 돌려놨어요." : "한도를 바꿨어요. 예비비가 그만큼 늘거나 줄어요.");
-    };
+    const sub = dday(d.key, today);
 
     return (
       <>
@@ -83,36 +87,42 @@ export function DaySheet() {
             </>
           )}
         </div>
-        {trip && <p className="hint">{sd(trip.start) + "~" + sd(trip.end) + " · 예산 " + won(trip.budget) + " 중 " + won(tSpent) + " 썼어요" + (trip.fund === "separate" ? " (따로 모아 둔 돈)" : "")}</p>}
 
         {more && (
           <div className="dc-more">
-            {!trip && (
-              <div className="limit-edit">
-                <label htmlFor="limitInput" className="k">
-                  이날 한도
-                </label>
-                <MoneyInput id="limitInput" ref={limRef} value={limitV} onValue={setLimitV} />
-                <button className="btn line" onClick={() => saveLimit(parse(limitV))}>
-                  바꾸기
-                </button>
-                <button className="btn line" onClick={() => saveLimit(null)}>
-                  원래대로
-                </button>
-              </div>
+            {items.length === 0 ? (
+              <button className="btn line" onClick={() => toggleNoSpend(d.key)}>
+                {ns ? "무지출 취소" : "무지출로 표시"}
+              </button>
+            ) : (
+              <p className="hint">기록이 있는 날은 무지출로 표시할 수 없어요.</p>
             )}
-            <div className="row">
-              {items.length === 0 ? (
-                <button className="btn line" style={{ flex: 1 }} onClick={() => toggleNoSpend(d.key)}>
-                  {ns ? "무지출 취소" : "무지출로 표시"}
-                </button>
-              ) : (
-                <p className="hint">기록이 있는 날은 무지출로 표시할 수 없어요.</p>
-              )}
-            </div>
           </div>
         )}
 
+        {/* 일정: 약속·여행·이날 한도를 블록으로. 누르면 바로 고쳐요 */}
+        <div className="dc-lbl">{isAppt || trip ? "일정" : "한도"}</div>
+        {trip ? (
+          <button className="dc-ev" onClick={() => openAppt({ day: d.key, mode: "trip", trip })}>
+            <i aria-hidden="true" />
+            <span className="t">
+              <b>{trip.name}</b>
+              <span>{"여행 · " + sd(trip.start) + "~" + sd(trip.end) + " · 예산 " + won(trip.budget) + (trip.fund === "separate" ? " (따로 모아 둔 돈)" : "")}</span>
+            </span>
+            <span className="chev" aria-hidden="true">›</span>
+          </button>
+        ) : (
+          <button className={"dc-ev" + (isAppt ? "" : " plain")} onClick={() => openLimit(d.key)}>
+            <i aria-hidden="true" />
+            <span className="t">
+              <b>{isAppt ? cfg.apptNames?.[d.key] || "약속" : "이날 한도"}</b>
+              <span>{(isAppt ? "약속 · " : "") + "한도 " + won(l) + (l !== d.base ? " (원래 " + won(d.base) + ")" : "")}</span>
+            </span>
+            <span className="chev" aria-hidden="true">›</span>
+          </button>
+        )}
+
+        <div className="dc-lbl">기록</div>
         {items.length > 0 ? (
           <ul className="evlist">
             {items.map((it) => {
@@ -170,9 +180,50 @@ export function DaySheet() {
     );
   })();
 
+  const saveLimit = (v: number | null) => {
+    if (!d) return;
+    update((data) => setDay(data.days, d.key, { limit: v }));
+    setLimitKey(null);
+    toast(v == null ? "원래 한도로 돌려놨어요." : "한도를 바꿨어요. 예비비가 그만큼 늘거나 줄어요.");
+  };
+  const lv = parse(limitV);
+  const lname = d && d.tag === "약속" ? (model?.cfg.apptNames?.[d.key] || "약속") + " 한도" : "이날 한도";
+
   return (
-    <Sheet open={!!d} onClose={closeDay} labelledBy="dayTitle" center>
-      {content}
-    </Sheet>
+    <>
+      <Sheet open={!!d} onClose={closeDay} labelledBy="dayTitle" center>
+        {content}
+      </Sheet>
+      <Sheet open={!!d && limitKey === d.key} onClose={() => setLimitKey(null)} labelledBy="limTitle" autoFocus={false}>
+        {d && (
+          <>
+            <div className="sheet-head">
+              <div>
+                <h2 id="limTitle">{lname}</h2>
+                <span className="k">{md(d.date) + " (" + DOW[d.wd] + ")" + (d.tag ? " · " + d.tag : "")}</span>
+              </div>
+              <button className="x" aria-label="닫기" onClick={() => setLimitKey(null)}>
+                ✕
+              </button>
+            </div>
+            <div className="lim-big">
+              <MoneyInput id="limitInput" ref={limRef} aria-label={lname} value={limitV} onValue={setLimitV} onKeyDown={(e) => e.key === "Enter" && saveLimit(lv)} />
+              <span aria-hidden="true">원</span>
+            </div>
+            <p className="hint" aria-live="polite">
+              {"원래 한도 " + won(d.base) + (lv > d.base ? " · 예비비에서 " + won(lv - d.base) + "을 더 써요." : lv < d.base ? " · " + won(d.base - lv) + "이 예비비로 남아요." : "")}
+            </p>
+            <div className="lim-acts">
+              <button className="btn gray" onClick={() => saveLimit(null)}>
+                원래대로
+              </button>
+              <button className="btn" onClick={() => saveLimit(lv)}>
+                바꾸기
+              </button>
+            </div>
+          </>
+        )}
+      </Sheet>
+    </>
   );
 }
