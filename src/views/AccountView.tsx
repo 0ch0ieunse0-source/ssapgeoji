@@ -70,6 +70,13 @@ export function AccountView() {
     return () => window.clearTimeout(t);
   }, [armed]);
 
+  // 가입·로그인 단계 화면은 흰 바탕(다크 모드에선 다크 표면색)으로 보여줘요
+  const plain = flow === "face" || flow === "done" || !account.id || page === "password";
+  useEffect(() => {
+    document.body.classList.toggle("page-plain", plain);
+    return () => document.body.classList.remove("page-plain");
+  }, [plain]);
+
   const nid = normalizeId(id);
   const records = Object.values(S.days).reduce((n, d) => n + (d?.items?.length || 0), 0);
 

@@ -696,3 +696,12 @@ html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adj
 .nudge-b .btn { min-height: 44px; padding: 0 12px; border-radius: 12px; font-size: 15px; }
 .btn.gray { background: var(--surface-2); color: var(--ink); }
 .acct-who { flex-direction: row; align-items: center; gap: 12px; }
+
+/* 가입·로그인 단계 화면: 라이트는 흰 바탕, 다크는 다크 표면색 */
+body.page-plain { background: var(--surface); }
+body.page-plain .top, body.page-plain .page-head { background: var(--surface); }
+body.page-plain .page-head .pbtn { background: transparent; box-shadow: none; }
+body.page-plain .acct-cta { background: linear-gradient(transparent, var(--surface) 24px); }
+body.page-plain .acct-list, body.page-plain .acct-info, body.page-plain .warn-note { background: var(--surface-2); }
+body.page-plain .acct-info { box-shadow: none; }
+body.page-plain .acct-done i { box-shadow: 0 0 0 4px var(--surface); }
