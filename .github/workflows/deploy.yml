@@ -26,6 +26,17 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      # 테스트 링크만 올릴 때(손으로 실행): 진짜 앱 버전을 지금 올라가 있는 것과 똑같이 둬서
+      # 친구들 폰에 '새 버전이 있어요'가 뜨지 않게 해요. 못 읽어 오면 배포를 멈춰요.
+      - name: Keep live version on test-only deploys
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if grep -q 'const APP_VERSION = new Date().toISOString();' vite.config.ts; then
+            LIVE=$(curl -fsSL "https://0ch0ieunse0-source.github.io/ssapgeoji/version.json?t=$(date +%s)" | sed -n 's/.*"version":"\([^"]*\)".*/\1/p')
+            [ -n "$LIVE" ] || { echo "live version not found"; exit 1; }
+            echo "keep live version: $LIVE"
+            sed -i "s|const APP_VERSION = new Date().toISOString();|const APP_VERSION = \"$LIVE\";|" vite.config.ts
+          fi
       - run: npm run build
       # design 브랜치가 있으면 디자인 테스트 버전을 /ssapgeoji/test/ 에 같이 올려요 (진짜 앱과 기록을 따로 저장해요)
       - name: Build design preview
