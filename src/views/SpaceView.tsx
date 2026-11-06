@@ -252,7 +252,8 @@ export function SpaceView({ sub = "" }: { sub?: string }) {
       <section className="card room-card">
         <RoomScene tier={t} />
         <div className="room-who">
-          <AvatarPicker row={mine} onDone={(src) => setRows((rs) => (rs || []).map((r) => (r.code === me.code ? { ...r, avatar: src } : r)))} />
+          {/* 사진은 마이페이지에서만 바꿔요 */}
+          <Avatar src={mine?.avatar} name={me.nickname} size={64} />
           <span>
             <b>{me.nickname + "의 방"}</b>
             <span className="k">{ROOM_TIERS[t].name + " · " + ROOM_TIERS[t].desc}</span>
