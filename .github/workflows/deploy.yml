@@ -27,6 +27,16 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+      # design 브랜치가 있으면 디자인 테스트 버전을 /ssapgeoji/test/ 에 같이 올려요 (진짜 앱과 기록을 따로 저장해요)
+      - name: Build design preview
+        run: |
+          if git ls-remote --exit-code --heads origin design; then
+            git fetch --depth=1 origin design
+            git worktree add ../design FETCH_HEAD
+            cd ../design
+            npm ci
+            BASE=/ssapgeoji/test/ VITE_PREVIEW=1 npx vite build --outDir "$GITHUB_WORKSPACE/dist/test" --emptyOutDir
+          fi
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

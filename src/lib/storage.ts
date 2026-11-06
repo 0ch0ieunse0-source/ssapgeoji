@@ -39,9 +39,15 @@ export function normalize(raw: any, today: Key): Data {
   return s;
 }
 
+/** 디자인 테스트 버전(/test/)은 진짜 기록을 한 번 복사해 와서 따로 저장해요. 진짜 기록(aggim-v1)에는 절대 쓰지 않아요. */
+export const IS_PREVIEW = import.meta.env.VITE_PREVIEW === "1";
+const PREVIEW_KEY = "ssapgeoji-preview";
+const KEY = IS_PREVIEW ? PREVIEW_KEY : STORAGE_KEY;
+
 export function loadData(today: Key): { data: Data; ok: boolean } {
   try {
-    return { data: normalize(JSON.parse(localStorage.getItem(STORAGE_KEY) || "null"), today), ok: true };
+    const raw = localStorage.getItem(KEY) ?? (IS_PREVIEW ? localStorage.getItem(STORAGE_KEY) : null);
+    return { data: normalize(JSON.parse(raw || "null"), today), ok: true };
   } catch {
     return { data: EMPTY(), ok: false };
   }
@@ -49,7 +55,7 @@ export function loadData(today: Key): { data: Data; ok: boolean } {
 
 export function saveData(data: Data): boolean {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    localStorage.setItem(KEY, JSON.stringify(data));
     return true;
   } catch {
     return false;

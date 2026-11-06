@@ -13,8 +13,9 @@ const versionFile = (): Plugin => ({
 });
 
 // GitHub Pages 주소가 https://아이디.github.io/ssapgeoji/ 이라서 base를 저장소 이름으로 맞춰요.
+// 디자인 테스트 버전은 BASE=/ssapgeoji/test/ 로 따로 빌드해요 (.github/workflows/deploy.yml)
 export default defineConfig({
-  base: "/ssapgeoji/",
+  base: (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env.BASE || "/ssapgeoji/",
   plugins: [react(), versionFile()],
   define: { __APP_VERSION__: JSON.stringify(APP_VERSION) },
   test: {

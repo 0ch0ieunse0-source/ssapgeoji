@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { sd } from "../lib/date";
+import { IS_PREVIEW } from "../lib/storage";
 import { currentUnread } from "../notices";
 import { shiftPeriod } from "../lib/period";
 import { useApp, type ViewName } from "../state/app";
@@ -60,6 +61,12 @@ export function TopBar() {
 
 export function Banner() {
   const { storageOk } = useApp();
+  if (IS_PREVIEW)
+    return (
+      <div className="banner preview-banner" role="note">
+        디자인 테스트 버전이에요. 처음 열 때 기록을 복사해 왔고, 여기서 바꾼 건 진짜 앱에 반영되지 않아요.
+      </div>
+    );
   if (storageOk) return null;
   return (
     <div className="banner" role="alert">

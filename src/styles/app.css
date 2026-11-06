@@ -614,3 +614,5 @@ html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adj
 .gear-tip button { border: none; background: none; color: inherit; font: inherit; font-size: 13px; cursor: pointer; min-height: 32px; }
 .gear-tip-go { font-weight: 600; padding: 0; }
 .gear-tip-x { width: 32px; opacity: 0.7; }
+
+.preview-banner { background: var(--surface-2); color: var(--muted); }
