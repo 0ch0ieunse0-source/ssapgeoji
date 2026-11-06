@@ -3,15 +3,18 @@
  *  - 서버에서 받은 걸로 폰 기록을 '덮어쓰지' 않아요. 항상 합쳐요(merge3). 합치기 전 폰 기록은 따로 한 벌 남겨요.
  *  - 서버로 가는 건 아이디, 출입증, 잠긴 열쇠, 잠긴 기록뿐이에요. (vault.test.ts·account.test.ts가 지켜요)
  */
-import { merge3 } from "../lib/merge";
-import { normalize } from "../lib/storage";
+import { merge3, mergeOnLogin } from "../lib/merge";
+import { IS_PREVIEW, normalize } from "../lib/storage";
 import type { Data, Key } from "../lib/types";
 import { deriveKeys, KDF_ITER, newDataKey, newSalt, seal, unseal, unwrapDataKey, wrapDataKey } from "../lib/vault";
 import { rpc } from "./rank";
 
-const SESSION_KEY = "ssapgeoji-vault";
-const BASE_KEY = "ssapgeoji-vault-base"; // 마지막으로 서버와 맞춘 기록 (합칠 때 기준)
-const SAFETY_KEY = "ssapgeoji-before-sync"; // 서버 기록과 합치기 직전의 폰 기록 (만일을 위해)
+// 테스트 링크(/test/)는 진짜 앱과 같은 주소(origin)라 저장소를 같이 써요.
+// 기록을 따로 두는 것처럼 로그인 정보도 따로 둬요. (같이 쓰면 테스트 링크의 옛 사본이 서버를 덮을 수 있어요)
+export const ACCOUNT_PREFIX = IS_PREVIEW ? "ssapgeoji-preview-" : "ssapgeoji-";
+const SESSION_KEY = ACCOUNT_PREFIX + "vault";
+const BASE_KEY = ACCOUNT_PREFIX + "vault-base"; // 마지막으로 서버와 맞춘 기록 (합칠 때 기준)
+const SAFETY_KEY = ACCOUNT_PREFIX + "before-sync"; // 서버 기록과 합치기 직전의 폰 기록 (만일을 위해)
 
 export interface Session {
   id: string;
@@ -45,7 +48,7 @@ export function loadSession(): Session | null {
     return null;
   }
 }
-const LAST_ID_KEY = "ssapgeoji-vault-last"; // 마지막으로 쓴 아이디 (다시 로그인할 때 채워 두기)
+const LAST_ID_KEY = ACCOUNT_PREFIX + "vault-last"; // 마지막으로 쓴 아이디 (다시 로그인할 때 채워 두기)
 const saveSession = (s: Session | null) => {
   set(SESSION_KEY, s ? JSON.stringify(s) : null);
   if (s) set(LAST_ID_KEY, s.id);
@@ -114,7 +117,7 @@ export async function finishLogin(id: string, auth: string, dk: string, got: { b
   if (!local.settings && !Object.keys(local.days).length) merged = remote;
   else {
     set(SAFETY_KEY, JSON.stringify(local));
-    merged = normalize(merge3(undefined, local, remote), today);
+    merged = normalize(mergeOnLogin(local, remote), today);
   }
   saveBase(remote);
   if (JSON.stringify(merged) !== JSON.stringify(remote)) await push(merged, today);

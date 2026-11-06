@@ -73,3 +73,7 @@ export function merge3<T>(base: T | undefined, local: T, remote: T): T {
   }
   return local;
 }
+
+/** 로그인할 때(기준점 없음) 합치기: 기록·목록은 양쪽 다 살리고, 같은 칸 값이 다르면 서버 쪽을 써요.
+ *  (오래 안 연 기기에 남은 옛 설정값이 서버의 새 값을 덮지 않게) */
+export const mergeOnLogin = <T>(local: T, remote: T): T => merge3(undefined, remote, local);

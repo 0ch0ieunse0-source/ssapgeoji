@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { merge3 } from "./merge";
+import { merge3, mergeOnLogin } from "./merge";
 import { deriveKeys, newDataKey, newSalt, normalizeId, seal, unseal, unwrapDataKey, validId, validPassword, wrapDataKey } from "./vault";
 
 const ITER = 1000; // 테스트는 빠르게 (앱은 60만 번)
@@ -111,5 +111,16 @@ describe("두 기기 기록 합치기", () => {
     r.days["2026-11-05"].items = [it0("b", 2000)];
     const m = merge3(undefined, l, r);
     expect(m.days["2026-11-05"].items.map((x) => x.id)).toEqual(["a", "b"]);
+  });
+
+  it("로그인할 때: 같은 칸이 다르면 서버 값, 기록은 양쪽 다 남아요", () => {
+    const stale = clone(base), server = clone(base);
+    stale.settings.total = 300000; // 이 기기에 남은 옛 값
+    server.settings.total = 600000; // 다른 기기에서 고친 새 값
+    stale.days["2026-11-05"].items.push(it0("x", 100));
+    server.days["2026-11-05"].items.push(it0("y", 200));
+    const m = mergeOnLogin(stale, server);
+    expect(m.settings.total).toBe(600000);
+    expect(m.days["2026-11-05"].items.map((x) => x.id).sort()).toEqual(["a", "b", "x", "y"]);
   });
 });

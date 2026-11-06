@@ -8,10 +8,10 @@
 import type { Data, Key } from "../lib/types";
 import { b64url, kekFromPrf, openWith, sealWith } from "../lib/vault";
 import { rpc } from "./rank";
-import { AccountError, finishLogin, loadSession } from "./vault";
+import { ACCOUNT_PREFIX, AccountError, finishLogin, loadSession } from "./vault";
 
 const PRF_SALT = new TextEncoder().encode("ssapgeoji-passkey-prf-v1");
-const LOCAL_KEY = "ssapgeoji-passkey"; // 이 폰에서 켠 패스키 id (메뉴 표시용)
+const LOCAL_KEY = ACCOUNT_PREFIX + "passkey"; // 이 폰에서 켠 패스키 id (메뉴 표시용)
 const rand = (n: number) => crypto.getRandomValues(new Uint8Array(n));
 
 type PrfResults = { prf?: { enabled?: boolean; results?: { first?: ArrayBuffer } } };
