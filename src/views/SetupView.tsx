@@ -12,12 +12,13 @@ import { Icon } from "../components/common";
 import { ACCENTS, accentLabel, accentOf, applyAccent, type AccentId } from "../lib/theme";
 import { currentUnread } from "../notices";
 import { useApp } from "../state/app";
+import { AccountView } from "./AccountView";
 
 const DEFAULTS: Partial<Settings> = { cycleDay: 1, total: 0, apptLimit: 30000, appts: [], fixed: [], autoLimits: true };
 const intOrNull = (s: string) => parseInt(s, 10) || null;
 
 export function SetupView({ section = "" }: { section?: string }) {
-  const { S, today, update, replace, setView, toast, go, goBack, bumpForm, openGuide } = useApp();
+  const { S, today, update, replace, setView, toast, go, goBack, bumpForm, openGuide, account } = useApp();
   const cfg = S.settings;
   const c = cfg || DEFAULTS;
   // 처음에 '나중에 입력하기'로 시작해서 생활비가 비어 있어요
@@ -550,6 +551,11 @@ export function SetupView({ section = "" }: { section?: string }) {
       <section className="card setup-sec">
           <h2>기록 보관</h2>
           <p className="hint">기록은 이 기기의 브라우저에만 저장돼요. 기기를 바꾸거나 브라우저 기록을 지우기 전에 백업 파일을 저장해 두세요.</p>
+          {!account.id && (
+            <button className="link" style={{ textAlign: "left" }} onClick={() => go("setup/account")}>
+              로그인해 두면 백업 없이도 자동으로 보관돼요 →
+            </button>
+          )}
           <div className="row">
             <button className="btn line" style={{ flex: 1 }} onClick={saveBackup}>
               백업 파일 저장
@@ -585,6 +591,34 @@ export function SetupView({ section = "" }: { section?: string }) {
     </>
   );
 
+  // 전에 쓰던 기록 불러오기: Safari·홈 화면 아이콘·카톡 안 브라우저는 기록을 따로 저장해서, 다른 곳에서 열면 비어 보여요
+  const restoreCard = (
+    <section className="card setup-sec restore">
+      <h2>전에 쓰던 기록이 있나요?</h2>
+      <button className="btn" onClick={() => go("setup/account")}>
+        로그인해서 이어 쓰기
+      </button>
+      <p className="hint">계정이 없다면 아래 방법으로 옮길 수 있어요.</p>
+      <p className="hint">
+        기록은 연 곳마다 따로 저장돼요. Safari, 홈 화면 아이콘, 카카오톡 안에서 연 화면은 서로의 기록을 볼 수 없어요. 쓰던 곳에서 <b>설정 → 기록 보관 → 백업 파일 저장</b>을 한 다음, 여기서 불러오면 그대로 이어서 쓸 수 있어요.
+      </p>
+      <button className="btn line" onClick={() => fileRef.current?.click()}>
+        백업 불러오기
+      </button>
+      <input ref={fileRef} type="file" accept=".json,application/json" hidden onChange={readBackup} />
+      {pending && (
+        <>
+          <div className="preview">{pending.text}</div>
+          <button className="btn" onClick={applyBackup}>
+            이 백업으로 시작하기
+          </button>
+        </>
+      )}
+    </section>
+  );
+
+  if (section === "account") return <AccountView />;
+
   // 처음 시작할 때: 두 장으로 나눠요. 둘 다 '나중에 입력하기'로 건너뛸 수 있어요
   if (!cfg) {
     const goStep2 = () => {
@@ -601,6 +635,7 @@ export function SetupView({ section = "" }: { section?: string }) {
           <p>{fstep === 1 ? "기간과 생활비만 넣으면 하루 한도를 나눠드려요." : "넣으면 돈 일정과 카드값, 목표를 계산해 드려요."}</p>
           <p className="later-note">지금 안 넣어도 돼요. 나중에 설정에서 언제든 넣을 수 있어요.</p>
         </section>
+        {fstep === 1 && restoreCard}
         {fstep === 1 ? (
           <>
             {s1}
@@ -704,9 +739,7 @@ export function SetupView({ section = "" }: { section?: string }) {
   );
   return (
     <div className="view">
-      <div className="page-head">
-        <h1>설정</h1>
-      </div>
+      <PageHead title="설정" fallback="home" />
       <section className="card menu" aria-label="내 설정">
         {row("budget", "생활비와 한도", blank ? "아직 안 넣었어요" : "매달 " + cfg.cycleDay + "일 시작 · 생활비 " + man(cfg.total) + "원", () => go("setup/budget"))}
         {row(
@@ -724,6 +757,7 @@ export function SetupView({ section = "" }: { section?: string }) {
         {row("look", "화면", (cfg.name || "이름 없음") + " · " + accentLabel(cfg.accent), () => go("setup/look"))}
       </section>
       <section className="card menu" aria-label="기록과 도움말">
+        {row("account", "계정", account.id ? account.id + "로 로그인됨" : "로그인하면 어디서 열어도 같은 기록 (선택)", () => go("setup/account"), account.id ? undefined : <span className="badge">추천</span>)}
         {row("data", "기록 보관", "백업 저장·불러오기, 모든 기록 지우기", () => go("setup/data"))}
         {row("notice", "공지사항", "", () => go("notice"), unread ? <span className="badge">{"새 소식 " + unread}</span> : undefined)}
         {row("install", "홈 화면에 추가하는 법", "Safari·Chrome에서 앱처럼 쓰기", () => openGuide(true))}

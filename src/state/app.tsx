@@ -7,6 +7,8 @@ import { getDay, setDay } from "../lib/ledger";
 import { budgetOf, daysFor, makePlan, periodOf, planFor, preZero, resplitPlans, shiftPeriod, weeksOf, type DayInfo } from "../lib/period";
 import { livingMap } from "../lib/trip";
 import { loadData, saveData } from "../lib/storage";
+import { merge3 } from "../lib/merge";
+import { errorText, loadSession, logOut, needsPush, pull, push, AccountError } from "./vault";
 import type { Data, DaysMap, Key, Period, Plan, Settings } from "../lib/types";
 
 export type ViewName = "home" | "ledger" | "save" | "flow" | "goal" | "setup" | "notice" | "rank" | "settle";
@@ -41,7 +43,18 @@ interface EntryState {
   nonce: number;
 }
 
+export interface AccountState {
+  id: string | null;
+  status: "idle" | "saving" | "saved" | "error";
+  at: number | null;
+  msg?: string;
+}
+
 interface AppValue {
+  account: AccountState;
+  /** 계정 로그인·로그아웃 뒤 상태 다시 읽기, 또는 지금 바로 맞추기 */
+  syncNow: (kind?: "push" | "pull") => void;
+  refreshAccount: () => void;
   S: Data;
   storageOk: boolean;
   now: Date; // 오늘 0시
@@ -168,6 +181,72 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setS(d);
     setStorageOk(saveData(d));
   }, []);
+
+  // ── 계정(선택): 잠근 기록을 서버와 맞춰요. 폰 기록이 먼저고, 서버 것은 합치기만 해요 ──
+  const readAccount = (): AccountState => {
+    const s = loadSession();
+    return { id: s?.id || null, status: "idle", at: s?.syncedAt || null };
+  };
+  const [account, setAccount] = useState<AccountState>(readAccount);
+  const syncing = useRef(false);
+  const again = useRef<null | "push" | "pull">(null);
+  const todayRef = useRef(today);
+  todayRef.current = today;
+  const syncNow = useCallback((kind: "push" | "pull" = "push") => {
+    if (!loadSession()) return;
+    if (syncing.current) {
+      again.current = again.current === "pull" ? "pull" : kind;
+      return;
+    }
+    if (kind === "push" && !needsPush(sRef.current)) return;
+    syncing.current = true;
+    setAccount((a) => ({ ...a, status: "saving" }));
+    const start = sRef.current;
+    (async () => {
+      try {
+        const res = kind === "pull" ? await pull(start, todayRef.current) : await push(start, todayRef.current);
+        if (res) {
+          // 맞추는 동안 이 폰에서 더 적었으면 그것도 같이 살려요
+          const fin = sRef.current === start ? res : (merge3(start, sRef.current, res) as Data);
+          sRef.current = fin;
+          setS(fin);
+          setStorageOk(saveData(fin));
+        }
+        const s = loadSession();
+        setAccount({ id: s?.id || null, status: "saved", at: s?.syncedAt || null });
+      } catch (e) {
+        // 다른 기기에서 비밀번호를 바꿨으면 이 폰은 다시 로그인해야 해요 (폰 기록은 그대로)
+        if (e instanceof AccountError && e.message === "denied") {
+          logOut();
+          setAccount({ id: null, status: "error", at: null, msg: "다른 기기에서 비밀번호를 바꿔서 로그아웃됐어요. 다시 로그인해 주세요. 이 폰 기록은 그대로예요." });
+        } else setAccount((a) => ({ ...a, status: "error", msg: errorText(e) }));
+      } finally {
+        syncing.current = false;
+        const k = again.current;
+        again.current = null;
+        if (k) window.setTimeout(() => syncNow(k), 300);
+      }
+    })();
+  }, []);
+  const refreshAccount = useCallback(() => setAccount(readAccount()), []);
+  // 적을 때마다 1.5초 뒤 올려요
+  useEffect(() => {
+    if (!account.id) return;
+    const t = window.setTimeout(() => syncNow("push"), 1500);
+    return () => window.clearTimeout(t);
+  }, [S, account.id, syncNow]);
+  // 앱을 열거나 다시 볼 때 서버가 더 새로운지 확인해요
+  useEffect(() => {
+    if (!account.id) return;
+    const onShow = () => document.visibilityState === "visible" && syncNow("pull");
+    onShow();
+    document.addEventListener("visibilitychange", onShow);
+    window.addEventListener("online", onShow);
+    return () => {
+      document.removeEventListener("visibilitychange", onShow);
+      window.removeEventListener("online", onShow);
+    };
+  }, [account.id, syncNow]);
 
   const toast = useCallback((text: string, err = false) => {
     setToast((t) => ({ text, err, n: (t?.n || 0) + 1 }));
@@ -310,7 +389,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const value: AppValue = {
-    S, storageOk, now, today, tick, model, route, sub: S.settings ? sub : "", goBack,
+    account, syncNow, refreshAccount,
+    S, storageOk, now, today, tick, model, route, sub: S.settings || sub === "account" ? sub : "", goBack,
     update, replace, go, toast, toastState,
     setView: (p: Period | null) => {
       setSlideDir(0);

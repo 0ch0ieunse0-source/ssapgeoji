@@ -59,7 +59,7 @@ function SafariGuide({ env, onCopy }: { env: BrowserEnv; onCopy: () => void }) {
     return (
       <>
         <IosSteps />
-        <p className="hint">Safari와 홈 화면 아이콘은 기록을 따로 저장해요. 한쪽으로만 쓰세요.</p>
+        <p className="hint warn-note">Safari와 홈 화면 아이콘은 기록을 따로 저장해요. Safari에서 이미 기록했다면, 추가하기 전에 <b>설정 → 계정</b>에서 로그인해 두세요. 아이콘에서 같은 아이디로 로그인하면 그대로 이어져요.</p>
       </>
     );
   if (env.os === "android") return <AndroidSteps />;

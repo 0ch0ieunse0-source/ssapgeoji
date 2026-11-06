@@ -17,6 +17,8 @@ import { SettleView } from "./views/SettleView";
 import { SaveView } from "./views/SaveView";
 import { SetupView } from "./views/SetupView";
 
+const TAB_ROUTES: string[] = ["home", "ledger", "save", "flow", "goal"];
+
 function Shell() {
   const { model, route, sub, entry, dayKey, formNonce, appt, openAppt } = useApp();
   const accent = model?.cfg.accent;
@@ -29,7 +31,8 @@ function Shell() {
   return (
     <>
       <div className="app">
-        {route !== "notice" && route !== "rank" && route !== "settle" && <TopBar />}
+        {/* 탭 화면에서만 앱 이름 헤더. 그 밖의 페이지는 각자 '뒤로가기 + 페이지 이름' 헤더를 써요 */}
+        {(!model || TAB_ROUTES.includes(route)) && <TopBar />}
         <Banner />
         {model && (route === "home" || route === "ledger" || route === "save") && <PeriodNav />}
         <main style={{ display: "contents" }}>
@@ -45,7 +48,7 @@ function Shell() {
         </main>
         {!model && <footer>기록은 이 기기의 브라우저에만 저장되고 다른 사람은 볼 수 없어요. 설정에서 백업 파일을 저장해 두면 다른 기기로 옮길 수 있어요.</footer>}
       </div>
-      {model && <Dock />}
+      {model && !(route === "setup" && sub === "account") && <Dock />}
       <DaySheet />
       {model && <ApptSheet target={appt} onClose={() => openAppt(null)} />}
       <EntrySheet />
