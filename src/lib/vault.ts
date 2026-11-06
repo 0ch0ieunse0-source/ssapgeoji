@@ -79,3 +79,19 @@ export async function seal(data: unknown, dk: string): Promise<string> {
 export async function unseal<T = unknown>(blob: string, dk: string): Promise<T> {
   return JSON.parse(td.decode(await aesOpen(await dataKey(dk), blob))) as T;
 }
+
+/** Face ID(패스키) PRF 값 → 묶음 잠금 열쇠. PRF 값은 그 기기의 패스키로만 다시 만들 수 있어요 */
+export async function kekFromPrf(prf: ArrayBuffer | Uint8Array): Promise<CryptoKey> {
+  const hk = await crypto.subtle.importKey("raw", prf instanceof Uint8Array ? prf : new Uint8Array(prf), "HKDF", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey(
+    { name: "HKDF", hash: "SHA-256", salt: new Uint8Array(0), info: te.encode("geoji-passkey") },
+    hk,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"],
+  );
+}
+/** 아무 값이나 주어진 열쇠로 잠그기 / 열기 */
+export const sealWith = (key: CryptoKey, v: unknown) => aesSeal(key, te.encode(JSON.stringify(v)));
+export const openWith = async <T>(key: CryptoKey, sealed: string): Promise<T> => JSON.parse(td.decode(await aesOpen(key, sealed))) as T;
+export const b64url = (u: Uint8Array) => b64(u).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");

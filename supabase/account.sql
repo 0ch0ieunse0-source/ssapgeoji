@@ -35,6 +35,16 @@ create table if not exists public.geoji_vault_history (
 alter table public.geoji_vault_history enable row level security;
 revoke all on public.geoji_vault_history from anon, authenticated;
 
+-- Face ID(패스키) 로그인용 묶음: 패스키로만 열 수 있게 잠긴 {출입증, 기록 열쇠}. 한 계정에 최대 10개
+create table if not exists public.geoji_vault_passkeys (
+  cred_id    text primary key check (char_length(cred_id) between 16 and 1400),
+  username   text not null references public.geoji_vaults(username) on delete cascade,
+  wrapped    text not null check (char_length(wrapped) < 2000),
+  created_at timestamptz not null default now()
+);
+alter table public.geoji_vault_passkeys enable row level security;
+revoke all on public.geoji_vault_passkeys from anon, authenticated;
+
 -- 출입증 확인. 10번 틀리면 15분 잠가요. (틀린 횟수가 저장되도록 예외 대신 결과로 돌려줘요)
 create or replace function public._geoji_v_check(p_id text, p_auth text)
 returns text language plpgsql security definer set search_path = public, extensions as $$
@@ -144,6 +154,8 @@ begin
   update geoji_vaults
      set auth_hash = encode(digest(p_new_auth, 'sha256'), 'hex'), salt = p_salt, kdf_iter = p_iter, wrapped_key = p_wrapped, updated_at = now()
    where username = p_id;
+  -- 패스키 묶음에는 예전 출입증이 들어 있어서 지워요 (각 기기에서 Face ID를 다시 켜요)
+  delete from geoji_vault_passkeys where username = p_id;
   return jsonb_build_object('ok', true);
 end $$;
 
@@ -158,6 +170,40 @@ begin
   return jsonb_build_object('ok', true);
 end $$;
 
+-- Face ID 켜기 (로그인된 폰에서)
+create or replace function public.geoji_v_pk_add(p_id text, p_auth text, p_cred text, p_wrapped text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare s text;
+begin
+  s := _geoji_v_check(p_id, p_auth);
+  if s <> 'ok' then return jsonb_build_object('ok', false, 'error', s); end if;
+  if (select count(*) from geoji_vault_passkeys where username = p_id) >= 10 then return jsonb_build_object('ok', false, 'error', 'too_many'); end if;
+  insert into geoji_vault_passkeys (cred_id, username, wrapped) values (p_cred, p_id, p_wrapped)
+  on conflict (cred_id) do update set wrapped = excluded.wrapped where geoji_vault_passkeys.username = p_id;
+  return jsonb_build_object('ok', true);
+end $$;
+
+-- Face ID 로그인: 패스키 id로 잠긴 묶음 받기 (패스키 없이는 열 수 없는 값이라 누구나 물어봐도 괜찮아요)
+create or replace function public.geoji_v_pk_get(p_cred text)
+returns jsonb language sql security definer set search_path = public as $$
+  select coalesce((select jsonb_build_object('ok', true, 'username', username, 'wrapped', wrapped) from geoji_vault_passkeys where cred_id = p_cred),
+                  jsonb_build_object('ok', false, 'error', 'missing'));
+$$;
+
+-- Face ID 끄기
+create or replace function public.geoji_v_pk_remove(p_id text, p_auth text, p_cred text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare s text;
+begin
+  s := _geoji_v_check(p_id, p_auth);
+  if s <> 'ok' then return jsonb_build_object('ok', false, 'error', s); end if;
+  delete from geoji_vault_passkeys where username = p_id and cred_id = p_cred;
+  return jsonb_build_object('ok', true);
+end $$;
+
+grant execute on function public.geoji_v_pk_add(text, text, text, text) to anon;
+grant execute on function public.geoji_v_pk_get(text) to anon;
+grant execute on function public.geoji_v_pk_remove(text, text, text) to anon;
 grant execute on function public.geoji_v_salt(text) to anon;
 grant execute on function public.geoji_v_create(text, text, text, int, text, text) to anon;
 grant execute on function public.geoji_v_get(text, text) to anon;

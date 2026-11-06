@@ -102,6 +102,11 @@ export async function logIn(id: string, password: string, local: Data, today: Ke
   if (!r.ok) fail(r.error);
   const got = r as { wrapped: string; blob: string; version: number };
   const dk = await unwrapDataKey(got.wrapped, kek).catch(() => fail("denied"));
+  return finishLogin(id, auth, dk, got, local, today);
+}
+
+/** 로그인 마무리 (비밀번호·Face ID 둘 다): 세션 저장 → 서버 기록과 폰 기록 합치기 */
+export async function finishLogin(id: string, auth: string, dk: string, got: { blob: string; version: number }, local: Data, today: Key): Promise<Data> {
   const remote = normalize(await unseal(got.blob, dk), today);
   const s: Session = { id, auth, dk, version: got.version, syncedAt: Date.now() };
   saveSession(s);
@@ -218,6 +223,10 @@ export const ERROR_TEXT: Record<string, string> = {
   locked: "여러 번 틀려서 15분 동안 잠겼어요. 잠시 뒤에 다시 해 주세요.",
   bad_id: "아이디는 영어 소문자·숫자·밑줄로 4~16자예요.",
   busy: "다른 기기와 동시에 저장하고 있어요. 잠시 뒤 다시 해 주세요.",
+  passkey_cancel: "Face ID를 취소했어요.",
+  passkey_unsupported: "이 폰(브라우저)은 Face ID 로그인을 지원하지 않아요. 아이디로 로그인해 주세요.",
+  passkey_gone: "이 Face ID는 더 이상 쓸 수 없어요. 비밀번호를 바꿨다면 아이디로 로그인한 뒤 Face ID를 다시 켜 주세요.",
+  too_many: "Face ID는 기기 10개까지 켤 수 있어요.",
 };
 export const errorText = (e: unknown) =>
   e instanceof AccountError ? ERROR_TEXT[e.message] || "잠시 뒤에 다시 해 주세요." : "인터넷 연결을 확인하고 다시 해 주세요.";

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { PageHead } from "../components/PageHead";
 import { normalizeId, validId, validPassword } from "../lib/vault";
 import { useApp } from "../state/app";
+import { forgetPasskeyHere, loginWithPasskey, passkeyOnThisPhone, passkeySupported, registerPasskey, removePasskey } from "../state/passkey";
 import { changePassword, deleteAccount, errorText, historyGet, historyList, idAvailable, lastId, logIn, logOut, signUp } from "../state/vault";
 
 const ago = (t: number | null, now: number) => {
@@ -29,6 +30,11 @@ export function AccountView() {
     return () => window.clearTimeout(t);
   }, [armed]);
   void tick; // '몇 분 전'을 1분마다 새로
+  const [pkOk, setPkOk] = useState(false);
+  const [pkOn, setPkOn] = useState(passkeyOnThisPhone);
+  useEffect(() => {
+    passkeySupported().then(setPkOk);
+  }, []);
 
   const nid = normalizeId(id);
   const run = async (fn: () => Promise<void>) => {
@@ -89,6 +95,24 @@ export function AccountView() {
               ? "가입하면 지금 이 폰 기록이 잠긴 채로 저장돼요. Safari, 홈 화면 아이콘, 다른 폰에서 로그인하면 같은 기록이 보여요."
               : "가입한 아이디로 로그인하면 기록을 불러와요. 이 폰에 적어 둔 기록이 있으면 지우지 않고 합쳐요."}
           </p>
+          {mode === "login" && pkOk && (
+            <button
+              className="btn"
+              disabled={busy}
+              onClick={() =>
+                run(async () => {
+                  const merged = await loginWithPasskey(S, today);
+                  replace(merged);
+                  refreshAccount();
+                  setPkOn(passkeyOnThisPhone());
+                  toast("Face ID로 로그인했어요.");
+                  if (!S.settings) go("home");
+                })
+              }
+            >
+              Face ID로 로그인
+            </button>
+          )}
           <form className="acct-form" onSubmit={submit}>
             <div className="field">
               <label htmlFor="acId">아이디</label>
@@ -144,6 +168,8 @@ export function AccountView() {
               if (pw !== pw2) return setErr("비밀번호 확인이 달라요.");
               run(async () => {
                 await changePassword(pw);
+                forgetPasskeyHere();
+                setPkOn(null);
                 setPw("");
                 setPw2("");
                 setPage("");
@@ -245,6 +271,31 @@ export function AccountView() {
           </span>
           <span className="chev" aria-hidden="true">›</span>
         </button>
+        {pkOk && (
+          <button
+            className="menu-row"
+            disabled={busy}
+            onClick={() =>
+              run(async () => {
+                if (pkOn) {
+                  await removePasskey();
+                  setPkOn(null);
+                  toast("이 폰의 Face ID 로그인을 껐어요.");
+                } else {
+                  await registerPasskey();
+                  setPkOn(passkeyOnThisPhone());
+                  toast("Face ID 로그인을 켰어요.");
+                }
+              })
+            }
+          >
+            <span className="mt">
+              <b>{pkOn ? "Face ID 로그인 켜짐" : "Face ID로 로그인 켜기"}</b>
+              <span>{pkOn ? "누르면 이 폰에서 꺼요" : "비밀번호 없이 Face ID·지문으로 들어와요"}</span>
+            </span>
+            <span className="chev" aria-hidden="true">›</span>
+          </button>
+        )}
         <button
           className="menu-row"
           onClick={() => {
