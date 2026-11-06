@@ -7,7 +7,7 @@ import { COIN_MEMO_MAX, nextTier, ROOM_TIERS, tierOf } from "../lib/space";
 import { useApp } from "../state/app";
 import { loadRank } from "../state/rank";
 import { fetchExtra, fetchSpace, fetchVisits, giveCoin, setAvatar, shrinkPhoto, type CoinVisit, type SpaceExtra, type SpaceRow } from "../state/space";
-import type { PublicWish } from "../lib/space";
+import { buildPublicWish, type PublicWish } from "../lib/space";
 
 export { Avatar };
 
@@ -86,6 +86,18 @@ function CoinBar({ coins }: { coins: number }) {
   );
 }
 
+/** 생각 풍선에 넣을 것: 참는 중인 물건 (이름 + D-day) */
+function toThoughts(wish: PublicWish[] | null | undefined) {
+  const today = new Date();
+  const base = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  return (wish || [])
+    .filter((w) => w.s === "wait")
+    .map((w) => {
+      const n = Math.ceil((new Date(w.d + "T00:00:00").getTime() - base) / 864e5);
+      return { text: w.n, sub: n > 0 ? "D-" + n : "고민 끝" };
+    });
+}
+
 function WishList({ wish, mine }: { wish: PublicWish[] | null | undefined; mine?: boolean }) {
   const today = new Date();
   const dleft = (d: string) => Math.ceil((new Date(d + "T00:00:00").getTime() - new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime()) / 864e5);
@@ -145,7 +157,7 @@ function Visits({ code, reload, hidden }: { code: string; reload: number; hidden
 
 /** 스페이스 탭: 내 방 · 친구 방 · 동전 */
 export function SpaceView({ sub = "" }: { sub?: string }) {
-  const { go, toast } = useApp();
+  const { S, go, toast } = useApp();
   const me = loadRank();
   const [rows, setRows] = useState<SpaceRow[] | null>(null);
   const [extra, setExtra] = useState<Record<string, SpaceExtra>>({});
@@ -233,8 +245,11 @@ export function SpaceView({ sub = "" }: { sub?: string }) {
         {!isFriend && rows && <p className="hint">친구 목록에 없는 방이에요.</p>}
         {f && (
           <>
+            <section className="space-hero friend">
+              <RoomScene tier={tierOf(f.coins)} fill thoughts={toThoughts(extra[f.code]?.wish)} />
+              <span className="sh-tier">{tierOf(f.coins) + 1 + "단계 · " + ROOM_TIERS[tierOf(f.coins)].name}</span>
+            </section>
             <section className="card room-card">
-              <RoomScene tier={tierOf(f.coins)} />
               <div className="room-who">
                 <Avatar src={f.avatar} name={f.nickname} size={48} />
                 <span>
@@ -306,8 +321,9 @@ export function SpaceView({ sub = "" }: { sub?: string }) {
       </div>
     );
 
-  // 내 스페이스 (스페이스 탭의 주인공)
+  // 내 스페이스 (스페이스 탭의 주인공): 방 그림이 화면을 채우고, 갖고 싶은 물건은 생각 풍선으로
   const t = tierOf(mine?.coins || 0);
+  const myThoughts = toThoughts(buildPublicWish(S.wish.items));
   return (
     <div className="view">
       {err && (
@@ -315,40 +331,27 @@ export function SpaceView({ sub = "" }: { sub?: string }) {
           스페이스를 불러오지 못했어요. 잠시 뒤 다시 열어 주세요.
         </p>
       )}
-      <section className="my-room">
-        <div className="my-room-scene">
-          <RoomScene tier={t} />
-          <span className="my-room-tier">{t + 1 + "단계 · " + ROOM_TIERS[t].name}</span>
+      <section className="space-hero" aria-label={me.nickname + "의 방"}>
+        <RoomScene tier={t} fill thoughts={myThoughts} />
+        <span className="sh-tier">{t + 1 + "단계 · " + ROOM_TIERS[t].name}</span>
+        <button className="sh-visit" onClick={() => go("space/friends")}>
+          {"친구 방 놀러가기" + (me.friends.length ? " " + me.friends.length : "")}
+          {Icon.next}
+        </button>
+        <div className="sh-bottom">
+          <div className="room-who">
+            {/* 사진은 마이페이지에서만 바꿔요 */}
+            <Avatar src={mine?.avatar} name={me.nickname} size={48} />
+            <span>
+              <b>{me.nickname + "의 방"}</b>
+              <span>{ROOM_TIERS[t].desc}</span>
+            </span>
+          </div>
+          {mine && mine.coin_lost > 0 && <p className="sh-lost">{"지난 시즌 파산해서 동전 " + mine.coin_lost + "개를 잃었어요 💀"}</p>}
+          <CoinBar coins={mine?.coins || 0} />
         </div>
-        <div className="room-who">
-          {/* 사진은 마이페이지에서만 바꿔요 */}
-          <Avatar src={mine?.avatar} name={me.nickname} size={56} />
-          <span>
-            <b>{me.nickname + "의 방"}</b>
-            <span className="k">{ROOM_TIERS[t].desc}</span>
-          </span>
-        </div>
-        {mine && mine.coin_lost > 0 && <p className="hint warn-note">{"지난 시즌 파산해서 동전 " + mine.coin_lost + "개를 잃었어요 💀"}</p>}
-        <CoinBar coins={mine?.coins || 0} />
       </section>
 
-      <button className="visit-btn" onClick={() => go("space/friends")}>
-        <span className="visit-avs" aria-hidden="true">
-          {friends.slice(0, 4).map((f) => (
-            <Avatar key={f.code} src={f.avatar} name={f.nickname} size={34} />
-          ))}
-          {!friends.length && <i>{Icon.space}</i>}
-        </span>
-        <span className="visit-t">
-          <b>친구 스페이스 놀러 가기</b>
-          <span>{me.friends.length ? "친구 " + me.friends.length + "명 · 동전 주고 오기" : "친구를 추가하고 놀러 가요"}</span>
-        </span>
-        <span className="chev" aria-hidden="true">
-          {Icon.next}
-        </span>
-      </button>
-
-      <WishList wish={extra[me.code] ? extra[me.code].wish : null} mine />
       <Visits code={me.code} reload={reload} />
 
       <div className="space-links">
