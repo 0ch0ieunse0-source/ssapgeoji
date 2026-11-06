@@ -585,6 +585,28 @@ export function SetupView({ section = "" }: { section?: string }) {
     </>
   );
 
+  // 전에 쓰던 기록 불러오기: Safari·홈 화면 아이콘·카톡 안 브라우저는 기록을 따로 저장해서, 다른 곳에서 열면 비어 보여요
+  const restoreCard = (
+    <section className="card setup-sec restore">
+      <h2>전에 쓰던 기록이 있나요?</h2>
+      <p className="hint">
+        기록은 연 곳마다 따로 저장돼요. Safari, 홈 화면 아이콘, 카카오톡 안에서 연 화면은 서로의 기록을 볼 수 없어요. 쓰던 곳에서 <b>설정 → 기록 보관 → 백업 파일 저장</b>을 한 다음, 여기서 불러오면 그대로 이어서 쓸 수 있어요.
+      </p>
+      <button className="btn line" onClick={() => fileRef.current?.click()}>
+        백업 불러오기
+      </button>
+      <input ref={fileRef} type="file" accept=".json,application/json" hidden onChange={readBackup} />
+      {pending && (
+        <>
+          <div className="preview">{pending.text}</div>
+          <button className="btn" onClick={applyBackup}>
+            이 백업으로 시작하기
+          </button>
+        </>
+      )}
+    </section>
+  );
+
   // 처음 시작할 때: 두 장으로 나눠요. 둘 다 '나중에 입력하기'로 건너뛸 수 있어요
   if (!cfg) {
     const goStep2 = () => {
@@ -601,6 +623,7 @@ export function SetupView({ section = "" }: { section?: string }) {
           <p>{fstep === 1 ? "기간과 생활비만 넣으면 하루 한도를 나눠드려요." : "넣으면 돈 일정과 카드값, 목표를 계산해 드려요."}</p>
           <p className="later-note">지금 안 넣어도 돼요. 나중에 설정에서 언제든 넣을 수 있어요.</p>
         </section>
+        {fstep === 1 && restoreCard}
         {fstep === 1 ? (
           <>
             {s1}

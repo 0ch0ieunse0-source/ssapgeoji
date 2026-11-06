@@ -123,6 +123,18 @@ export function HomeView() {
         </div>
       </section>
 
+      {!cfg.total && !Object.values(R).some((x) => x?.items?.length) && (
+        <section className="card restore" aria-label="전에 쓰던 기록">
+          <h2>전에 쓰던 기록이 있나요?</h2>
+          <p className="hint">
+            기록은 연 곳마다 따로 저장돼요. Safari와 홈 화면 아이콘, 카카오톡 안 화면은 서로 기록을 못 봐요. 쓰던 곳에서 백업 파일을 저장한 뒤 여기서 불러오세요.
+          </p>
+          <button className="btn line" onClick={() => go("setup/data")}>
+            백업 불러오러 가기
+          </button>
+        </section>
+      )}
+
       <div className="stats">
         <div className="stat">
           <span className="k">무지출 챌린지</span>

@@ -616,3 +616,8 @@ html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adj
 .gear-tip-x { width: 32px; opacity: 0.7; }
 
 .preview-banner { background: var(--surface-2); color: var(--muted); }
+
+.restore { border: 1.5px solid var(--accent); }
+.restore h2 { font-size: 17px; margin: 0; }
+.restore .hint b { color: var(--ink); }
+.warn-note { background: var(--warn-soft); color: var(--ink); border-radius: 12px; padding: 10px 12px; }
