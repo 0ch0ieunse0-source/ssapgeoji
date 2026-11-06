@@ -13,6 +13,7 @@ import { ACCENTS, accentLabel, accentOf, applyAccent, type AccentId } from "../l
 import { currentUnread } from "../notices";
 import { useApp } from "../state/app";
 import { AccountView } from "./AccountView";
+import { MyProfile } from "./MyProfile";
 
 const DEFAULTS: Partial<Settings> = { cycleDay: 1, total: 0, apptLimit: 30000, appts: [], fixed: [], autoLimits: true };
 const intOrNull = (s: string) => parseInt(s, 10) || null;
@@ -739,7 +740,12 @@ export function SetupView({ section = "" }: { section?: string }) {
   );
   return (
     <div className="view">
-      <PageHead title="설정" fallback="home" />
+      <div className="page-head">
+        <span aria-hidden="true" />
+        <h1>마이페이지</h1>
+        <span aria-hidden="true" />
+      </div>
+      <MyProfile />
       <section className="card menu" aria-label="내 설정">
         {row("budget", "생활비와 한도", blank ? "아직 안 넣었어요" : "매달 " + cfg.cycleDay + "일 시작 · 생활비 " + man(cfg.total) + "원", () => go("setup/budget"))}
         {row(

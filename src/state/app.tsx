@@ -12,8 +12,8 @@ import { merge3 } from "../lib/merge";
 import { errorText, loadSession, logOut, needsPush, pull, push, AccountError } from "./vault";
 import type { Data, DaysMap, Key, Period, Plan, Settings } from "../lib/types";
 
-export type ViewName = "home" | "ledger" | "save" | "flow" | "goal" | "setup" | "notice" | "rank" | "settle";
-export const VIEWS: ViewName[] = ["home", "ledger", "save", "flow", "goal", "setup", "notice", "rank", "settle"];
+export type ViewName = "home" | "ledger" | "save" | "flow" | "goal" | "setup" | "notice" | "rank" | "settle" | "space";
+export const VIEWS: ViewName[] = ["home", "ledger", "save", "flow", "goal", "setup", "notice", "rank", "settle", "space"];
 
 /** 설정이 끝난 뒤 화면에서 쓰는 값 (지금 보고 있는 달 기준) */
 export interface Model {

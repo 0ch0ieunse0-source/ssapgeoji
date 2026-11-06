@@ -80,6 +80,39 @@ export function BigWon({ n }: { n: number }) {
 
 const svg = { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "aria-hidden": true } as const;
 export const Icon = {
+  // 아래 탭: 통장 · 스페이스 · 마이페이지
+  bank: (
+    <svg {...svg} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3.5" y="6" width="17" height="13" rx="3" />
+      <path d="M3.5 10h17" />
+      <path d="M15.5 14.5h2" />
+    </svg>
+  ),
+  space: (
+    <svg {...svg} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 11l8-6.5 8 6.5" />
+      <path d="M6 9.5V19a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V9.5" />
+      <circle cx="12" cy="14.5" r="2" />
+    </svg>
+  ),
+  user: (
+    <svg {...svg} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8.5" r="3.8" />
+      <path d="M4.8 20a7.2 7.2 0 0 1 14.4 0" />
+    </svg>
+  ),
+  coin: (
+    <svg {...svg} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 7.5v9M9.5 9.5h3.75a1.75 1.75 0 0 1 0 3.5h-2.5a1.75 1.75 0 0 0 0 3.5H14.5" />
+    </svg>
+  ),
+  camera: (
+    <svg {...svg} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z" />
+      <circle cx="12" cy="13" r="3.5" />
+    </svg>
+  ),
   // 계정 화면용 라인 아이콘
   lock: (
     <svg {...svg} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

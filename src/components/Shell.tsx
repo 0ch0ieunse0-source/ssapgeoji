@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { sd } from "../lib/date";
 import { IS_PREVIEW } from "../lib/storage";
 import { currentUnread } from "../notices";
@@ -22,42 +21,57 @@ function NoticeButton() {
 }
 
 export function TopBar() {
-  const { model, go, route } = useApp();
+  const { model } = useApp();
   const name = model?.cfg.name;
-  // 생활비를 아직 안 넣었으면 홈에서 설정 버튼 아래에 작은 말풍선을 띄워요 (닫으면 이번에 연 동안은 안 떠요)
-  const [tipOff, setTipOff] = useState(false);
-  const tip = !!model && !model.cfg.total && route === "home" && !tipOff;
   return (
     <div className="top">
       <h1>{name ? name + "님의 거지노트" : "거지노트"}</h1>
-      <div className="top-r">
-        {model && <NoticeButton />}
-        {model && (
-          <button
-            className="gear"
-            aria-label={model.cfg.total ? "설정" : "설정, 생활비를 아직 안 넣었어요"}
-            onClick={() => {
-              setTipOff(true);
-              go("setup");
-            }}
-          >
-            {Icon.gear}
-          </button>
-        )}
-        {tip && (
-          <div className="gear-tip" role="note">
-            <button className="gear-tip-go" onClick={() => { setTipOff(true); go("setup/budget"); }}>
-              여기서 생활비를 넣어 주세요
-            </button>
-            <button className="gear-tip-x" aria-label="안내 닫기" onClick={() => setTipOff(true)}>
-              ✕
-            </button>
-          </div>
-        )}
-      </div>
+      <div className="top-r">{model && <NoticeButton />}</div>
     </div>
   );
 }
+
+/** 통장 탭 안의 세 화면 (돈 일정 · 목표 · 아끼기) */
+export const BANK_ROUTES: ViewName[] = ["flow", "goal", "save"];
+const BANK_LAST = "ssapgeoji-bank-last";
+export function BankTabs() {
+  const { route, go } = useApp();
+  const items: [ViewName, string][] = [
+    ["flow", "돈 일정"],
+    ["goal", "목표"],
+    ["save", "아끼기"],
+  ];
+  return (
+    <div className="seg bank-tabs" role="tablist" aria-label="통장">
+      {items.map(([v, label]) => (
+        <button
+          key={v}
+          role="tab"
+          aria-selected={route === v}
+          aria-pressed={route === v}
+          onClick={() => {
+            try {
+              sessionStorage.setItem(BANK_LAST, v);
+            } catch {
+              /* 기억 못 해도 괜찮아요 */
+            }
+            go(v);
+          }}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+const lastBank = (): ViewName => {
+  try {
+    const v = sessionStorage.getItem(BANK_LAST) as ViewName | null;
+    return v && BANK_ROUTES.includes(v) ? v : "flow";
+  } catch {
+    return "flow";
+  }
+};
 
 export function Banner() {
   const { storageOk } = useApp();
@@ -104,12 +118,13 @@ export function PeriodNav() {
   );
 }
 
-const TABS: { v: ViewName; label: string; icon: JSX.Element }[] = [
-  { v: "home", label: "홈", icon: Icon.home },
-  { v: "ledger", label: "가계부", icon: Icon.ledger },
-  { v: "save", label: "아끼기", icon: Icon.save },
-  { v: "flow", label: "돈 일정", icon: Icon.flow },
-  { v: "goal", label: "목표", icon: Icon.goal },
+// 아래 탭: 홈 · 가계부 · 통장(돈 일정·목표·아끼기) · 스페이스 · 마이페이지
+const TABS: { v: ViewName; label: string; icon: JSX.Element; also: ViewName[] }[] = [
+  { v: "home", label: "홈", icon: Icon.home, also: [] },
+  { v: "ledger", label: "가계부", icon: Icon.ledger, also: [] },
+  { v: "flow", label: "통장", icon: Icon.bank, also: BANK_ROUTES },
+  { v: "space", label: "스페이스", icon: Icon.space, also: ["rank"] },
+  { v: "setup", label: "마이페이지", icon: Icon.user, also: ["notice"] },
 ];
 
 export function Dock() {
@@ -124,7 +139,13 @@ export function Dock() {
         )}
         <nav className="tabbar" role="tablist" aria-label="메뉴">
           {TABS.map((t) => (
-            <button key={t.v} className="tab" role="tab" aria-selected={route === t.v} onClick={() => go(t.v)}>
+            <button
+              key={t.v}
+              className="tab"
+              role="tab"
+              aria-selected={route === t.v || t.also.includes(route)}
+              onClick={() => go(t.v === "flow" ? lastBank() : t.v)}
+            >
               {t.icon}
               {t.label}
             </button>

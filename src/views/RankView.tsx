@@ -200,7 +200,7 @@ export function RankView({ sub = "" }: { sub?: string }) {
   if (!local)
     return (
       <div className="view">
-        <PageHead title="친구 랭킹" fallback="home" />
+        <PageHead title="친구 랭킹" fallback="space" />
         <section className="card setup-sec">
           <h2>친구와 누가 더 잘 지키나 겨뤄요</h2>
           <p className="hint">2주마다 한도를 지킨 날의 비율로 순위를 매겨요. 금액은 절대 공유되지 않아요.</p>
@@ -257,7 +257,7 @@ export function RankView({ sub = "" }: { sub?: string }) {
   const me = rows?.find((r) => r.code === local.code);
   return (
     <div className="view">
-      <PageHead title="친구 랭킹" fallback="home" />
+      <PageHead title="친구 랭킹" fallback="space" />
       <section className="card setup-sec" aria-label="내 프로필">
         {editNick == null ? (
           <div className="card-head">

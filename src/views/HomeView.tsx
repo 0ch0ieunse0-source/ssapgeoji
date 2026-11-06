@@ -287,7 +287,21 @@ export function HomeView() {
 
   return (
     <div className="view home2">
-      {banner >= 0 && (
+      {!cfg.total && (
+        <div className="ad-banner">
+          <button className="ad-main" onClick={() => go("setup/budget")}>
+            <i aria-hidden="true">{Icon.plus}</i>
+            <span>
+              <b>한 달 생활비를 넣어 주세요</b>
+              <span>넣으면 하루 한도가 생겨요 · 마이페이지 → 생활비와 한도</span>
+            </span>
+            <span className="chev" aria-hidden="true">
+              {Icon.next}
+            </span>
+          </button>
+        </div>
+      )}
+      {banner >= 0 && cfg.total > 0 && (
         <div className="ad-banner">
           <button className="ad-main" onClick={() => go("setup/account")}>
             <i aria-hidden="true">{Icon.shield}</i>
