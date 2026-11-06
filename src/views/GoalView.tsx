@@ -120,7 +120,7 @@ export function GoalView() {
                 <SmallIco text={sd(s.date)} bg="var(--accent-soft)" fg="var(--accent)" />
                 <span className="t">
                   <b>{won(snapValue(s))}</b>
-                  <span>{"통장 " + won(s.cash) + " · 청약 " + won(s.cy) + " · 투자 " + won(s.etf)}</span>
+                  <span>{"통장 " + won(s.cash || 0) + " · 청약 " + won(s.cy || 0) + " · 투자 " + won(s.etf || 0)}</span>
                 </span>
                 <span className="a">
                   <button className="del" aria-label={sd(s.date) + " 자산 기록 삭제"} onClick={() => update((d) => void (d.goal.snaps = d.goal.snaps.filter((x) => x.id !== s.id)))}>

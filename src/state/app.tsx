@@ -6,7 +6,8 @@ import { kOf, startOfToday } from "../lib/date";
 import { getDay, setDay } from "../lib/ledger";
 import { budgetOf, daysFor, makePlan, periodOf, planFor, preZero, resplitPlans, shiftPeriod, weeksOf, type DayInfo } from "../lib/period";
 import { livingMap } from "../lib/trip";
-import { loadData, saveData } from "../lib/storage";
+import { cloneData, loadData, saveData } from "../lib/storage";
+import { onAppError, reportError } from "../lib/errors";
 import { merge3 } from "../lib/merge";
 import { errorText, loadSession, logOut, needsPush, pull, push, AccountError } from "./vault";
 import type { Data, DaysMap, Key, Period, Plan, Settings } from "../lib/types";
@@ -169,9 +170,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setGuide({ open: false, safariOnly: false });
   }, []);
 
+  // 기록 고치기: 사본에서 고친 뒤 문제가 없을 때만 저장해요. 고치다 오류가 나면 원래 기록은 그대로 둬요.
   const update = useCallback((fn: (d: Data) => void) => {
-    const next = structuredClone(sRef.current);
-    fn(next);
+    let next: Data;
+    try {
+      next = cloneData(sRef.current);
+      fn(next);
+    } catch (e) {
+      reportError(e, "save");
+      return;
+    }
     sRef.current = next;
     setS(next);
     setStorageOk(saveData(next));
@@ -253,6 +261,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     window.clearTimeout(toastTimer.current);
     toastTimer.current = window.setTimeout(() => setToast(null), 3200);
   }, []);
+  // 버튼을 눌렀는데 오류가 나면 '아무 반응 없음' 대신 화면 아래에 오류 내용을 알려줘요
+  useEffect(() => {
+    onAppError((m) => toast(m, true));
+    const onErr = (e: ErrorEvent) => reportError(e.error || e.message);
+    const onRej = (e: PromiseRejectionEvent) => reportError(e.reason);
+    window.addEventListener("error", onErr);
+    window.addEventListener("unhandledrejection", onRej);
+    return () => {
+      onAppError(null);
+      window.removeEventListener("error", onErr);
+      window.removeEventListener("unhandledrejection", onRej);
+    };
+  }, [toast]);
 
   useEffect(() => {
     const f = () => setHash(readHash());

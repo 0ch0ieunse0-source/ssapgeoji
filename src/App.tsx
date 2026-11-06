@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { applyAccent } from "./lib/theme";
 import { Onboarding } from "./components/Onboarding";
 import { WhatsNew } from "./components/WhatsNew";
@@ -37,6 +38,8 @@ function Shell() {
         <Banner />
         {model && (route === "home" || route === "ledger" || route === "save") && <PeriodNav />}
         <main style={{ display: "contents" }}>
+          {/* 화면 하나에 오류가 나도 아래 탭으로 다른 화면에 갈 수 있게, 화면마다 따로 감싸요 */}
+          <ErrorBoundary key={route + "/" + sub}>
           {route === "setup" && <SetupView key={(model ? "edit" : "new") + formNonce + sub} section={sub} />}
           {model && route === "home" && <HomeView />}
           {model && route === "ledger" && <LedgerView />}
@@ -46,6 +49,7 @@ function Shell() {
           {model && route === "notice" && <NoticeView key={sub} id={sub} />}
           {model && route === "rank" && <RankView key={sub} sub={sub} />}
           {model && route === "settle" && <SettleView />}
+          </ErrorBoundary>
         </main>
         {!model && <footer>기록은 이 기기의 브라우저에만 저장되고 다른 사람은 볼 수 없어요. 설정에서 백업 파일을 저장해 두면 다른 기기로 옮길 수 있어요.</footer>}
       </div>

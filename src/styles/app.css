@@ -838,3 +838,7 @@ body.page-plain .acct-done i { box-shadow: 0 0 0 4px var(--surface); }
 .sheet.pop:focus { outline: none; }
 .wn-acts { grid-template-columns: 1fr 1.5fr; }
 .wn-acts .btn { white-space: nowrap; padding: 0 12px; }
+
+/* 화면 오류 안내 */
+.crash h2 { margin: 0; font-size: 18px; }
+.crash-msg { margin: 0; padding: 12px; border-radius: 12px; background: var(--surface-2); font-size: 12.5px; white-space: pre-wrap; word-break: break-all; color: var(--over); }

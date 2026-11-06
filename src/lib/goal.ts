@@ -1,7 +1,8 @@
 import { dOf } from "./date";
 import type { Key, Settings, Snap } from "./types";
 
-export const snapValue = (s: Snap) => s.cash + s.cy + s.etf;
+// 칸이 비어 있어도(예전 기록·백업) 0으로 봐요
+export const snapValue = (s: Snap) => (Number(s.cash) || 0) + (Number(s.cy) || 0) + (Number(s.etf) || 0);
 
 /**
  * 저축 목표 계산. cfg.goalAmt와 cfg.goalDate가 있을 때만 부르세요.

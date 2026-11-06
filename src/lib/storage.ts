@@ -61,3 +61,6 @@ export function saveData(data: Data): boolean {
     return false;
   }
 }
+
+/** 기록 사본 만들기. 예전 아이폰(iOS 15.3 이하)엔 structuredClone이 없어서 JSON으로 복사해요 (기록은 JSON이라 똑같아요) */
+export const cloneData = <T>(d: T): T => (typeof structuredClone === "function" ? structuredClone(d) : (JSON.parse(JSON.stringify(d)) as T));
