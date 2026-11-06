@@ -705,3 +705,89 @@ body.page-plain .acct-cta { background: linear-gradient(transparent, var(--surfa
 body.page-plain .acct-list, body.page-plain .acct-info, body.page-plain .warn-note { background: var(--surface-2); }
 body.page-plain .acct-info { box-shadow: none; }
 body.page-plain .acct-done i { box-shadow: 0 0 0 4px var(--surface); }
+/* ── 디자인 정리 (홈 먼저): 그림자 없이 선과 글자 크기로 나눠요 ── */
+.home2 { gap: 12px; }
+.home2 .card { box-shadow: none; border-radius: 20px; padding: 20px; gap: 14px; }
+.home2 .card h2 { font-size: 18px; letter-spacing: -0.02em; }
+.home2 .card-head .k, .home2 .hint { font-size: 13px; }
+.home2 .hero { border-radius: 20px; padding: 24px 20px 20px; gap: 16px; }
+.home2 .hero .eyebrow { font-size: 15px; }
+.home2 .track { height: 6px; }
+.home2 .hero-row { gap: 0; border-top: 1px solid var(--hero-track); padding-top: 16px; }
+.home2 .hero-row > div { background: none; border-radius: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.home2 .hero-row > div + div { border-left: 1px solid var(--hero-track); padding-left: 16px; }
+.home2 .hero-row .k { font-size: 13px; }
+.home2 .hero-row .v { font-size: 20px; letter-spacing: -0.02em; }
+.home2 .stats { background: var(--surface); border-radius: 20px; padding: 18px 0; gap: 0; }
+.home2 .stat { background: none; box-shadow: none; border-radius: 0; padding: 0 16px; gap: 4px; color: inherit; font: inherit; }
+.home2 .stat + .stat { border-left: 1px solid var(--line); }
+.home2 .stat .k { font-size: 13px; }
+.home2 .stat .v { font-size: 18px; letter-spacing: -0.02em; }
+.home2 .tx li { padding: 12px 0; }
+.home2 .tx .t b { font-size: 16px; }
+.home2 .tx .t span { font-size: 13px; }
+.home2 .tx .a b { font-size: 16px; }
+.home2 .empty-box { border-radius: 14px; padding: 16px; font-size: 15px; }
+.home2 .btn.soft, .home2 .btn.line { min-height: 38px; padding: 0 14px; border-radius: 10px; font-size: 15px; font-weight: 600; }
+.home2 .mini-btns .btn { min-height: 32px; padding: 0 10px !important; border-radius: 8px; font-size: 13px !important; }
+.home2 .legend { gap: 10px; }
+.home2 .legend li { font-size: 15px; }
+.home2 .insight { background: none; border-radius: 0; padding: 16px 0 0; border-top: 1px solid var(--line); font-size: 15px; gap: 6px; }
+.home2 .insight .k { font-size: 14px; }
+.home2 .tiles { grid-template-columns: 1fr; gap: 0; }
+.home2 .tile { background: none; border-radius: 0; padding: 12px 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; row-gap: 2px; }
+.home2 .tile + .tile { border-top: 1px solid var(--line); }
+.home2 .tile:first-child { padding-top: 0; }
+.home2 .tile .k:first-child { font-size: 15px; color: var(--ink); }
+.home2 .tile .v { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-size: 17px; }
+
+/* 정산 차수: '명'이 달력(.rp)과 같은 이름이라 아래로 떨어지던 것 바로잡기 */
+.round .rp { flex-direction: row; gap: 4px; }
+.round .rp input { flex: 1 1 auto; }
+.round .rp span { flex: none; }
+
+/* 하루 카드의 약속 추가 버튼은 메인 컬러 */
+.dc-appt, .dc-appt.trip { background: var(--accent); color: var(--surface); border: none; }
+
+/* 위쪽 헤더: 스크롤해도 위에 붙어 있어요 */
+.top, .page-head, .st-head {
+  position: sticky; top: 0; z-index: 30; background: var(--bg);
+  margin: calc(-18px - env(safe-area-inset-top, 0px)) -16px 0;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px;
+}
+/* 탭이 아닌 페이지: 왼쪽 뒤로가기 + 가운데 페이지 이름 (일반 앱처럼) */
+.page-head, .st-head { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; gap: 4px; min-height: calc(56px + env(safe-area-inset-top, 0px)); }
+.page-head h1, .st-head h1 { font-size: 17px; font-weight: 700; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.page-head .pbtn, .st-head .pbtn { background: transparent; box-shadow: none; width: 44px; height: 44px; }
+.st-head > .k { text-align: right; }
+
+/* ── 그림자 정리: 바탕 위에 놓인 것(카드·버튼·달 이동 바)은 그림자 없이, 떠 있는 것만 연하게 ── */
+.card, .stat, .gear, .pnav, .seg button[aria-pressed="true"], .page-head .pbtn, .st-head .pbtn { box-shadow: none; }
+.fab { box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 22%, transparent); }
+.tabbar { box-shadow: 0 2px 12px rgba(30,20,40,.07); }
+.st-next { box-shadow: none; }
+.sheet.pop { box-shadow: 0 12px 32px rgba(0,0,0,.14); }
+.gear { background: transparent; }
+.gear:active { background: var(--surface-2); }
+.pnav { border: 1px solid var(--line); }
+
+/* ── 하루 카드 (시안 C): 일정 블록을 누르면 아래에서 한도 시트 ── */
+.dc-lbl { font-size: 13px; color: var(--muted); margin-bottom: -6px; }
+.dc-ev { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 4px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 12px 12px 0; border-radius: 12px; cursor: pointer; }
+.dc-ev:hover { background: var(--surface-2); }
+.dc-ev:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.dc-ev > i { align-self: stretch; border-radius: 4px; background: var(--accent); }
+.dc-ev.plain > i { background: var(--line); }
+.dc-ev .t { display: flex; flex-direction: column; min-width: 0; }
+.dc-ev .t b { font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dc-ev .t span { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dc-ev .chev { color: var(--muted); font-size: 20px; }
+.dc-sum { background: none; padding: 0; font-weight: 500; color: var(--muted); }
+.dc-sum b, .dc-sum .won, .dc-sum span > span { color: var(--ink); font-weight: 700; }
+.lim-big { display: flex; align-items: baseline; gap: 4px; border-bottom: 2px solid var(--accent); padding-bottom: 6px; }
+.lim-big input { flex: 1 1 auto; background: none; border: none; padding: 0; font-size: 32px; font-weight: 700; letter-spacing: -0.02em; height: auto; text-align: right; }
+.lim-big input:focus-visible { outline: none; }
+.lim-big span { font-size: 18px; color: var(--muted); }
+.lim-acts { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; }
+.lim-acts .btn { min-height: 52px; }
+.btn.gray { background: var(--surface-2); color: var(--ink); }

@@ -17,6 +17,8 @@ import { SettleView } from "./views/SettleView";
 import { SaveView } from "./views/SaveView";
 import { SetupView } from "./views/SetupView";
 
+const TAB_ROUTES: string[] = ["home", "ledger", "save", "flow", "goal"];
+
 function Shell() {
   const { model, route, sub, entry, dayKey, formNonce, appt, openAppt } = useApp();
   const accent = model?.cfg.accent;
@@ -29,7 +31,8 @@ function Shell() {
   return (
     <>
       <div className="app">
-        {route !== "notice" && route !== "rank" && route !== "settle" && <TopBar />}
+        {/* 탭 화면에서만 앱 이름 헤더. 그 밖의 페이지는 각자 '뒤로가기 + 페이지 이름' 헤더를 써요 */}
+        {(!model || TAB_ROUTES.includes(route)) && <TopBar />}
         <Banner />
         {model && (route === "home" || route === "ledger" || route === "save") && <PeriodNav />}
         <main style={{ display: "contents" }}>
