@@ -61,6 +61,9 @@ export interface Settings {
   preStart?: "zero" | "keep";
   /** 약속 이름 (선택): 날짜 → "민지 생일" */
   apptNames?: Record<Key, string>;
+  /** 홈 카드 순서·숨긴 카드 (홈 편집) */
+  homeOrder?: string[];
+  homeHidden?: string[];
   /** 여행 (여러 날을 한 예산으로) */
   trips?: import("./trip").Trip[];
 }
