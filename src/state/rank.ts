@@ -29,7 +29,7 @@ export function saveRank(r: RankLocal | null) {
   }
 }
 
-async function rpc<T>(fn: string, body: unknown): Promise<T> {
+export async function rpc<T>(fn: string, body: unknown): Promise<T> {
   const r = await fetch(SUPABASE_URL.replace(/\/$/, "") + "/rest/v1/rpc/" + fn, {
     method: "POST",
     // 예전 anon key(eyJ…)는 Authorization에도 넣고, 새 publishable key(sb_publishable_…)는 apikey에만 넣어요

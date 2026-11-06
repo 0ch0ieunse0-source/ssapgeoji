@@ -7,4 +7,6 @@
 - 날짜·돈 계산은 `src/lib`의 순수 함수로 두고 Vitest 테스트를 같이 고쳐요 (`npm test`).
 - 배포 주소는 `/ssapgeoji/` (`vite.config.ts`의 base). 저장소 이름과 같아야 해요.
 - **친구 랭킹: 금액·내역·메모 등 가계부 기록은 절대 서버로 보내지 않아요.** 서버로 가는 값은 `src/lib/rank.ts`의 `buildScorePayload`(코드·닉네임·시즌·지킴률·등급·파산 여부)뿐이고, 테스트가 이걸 지켜요. 랭킹 서버 설정은 `src/rankConfig.ts`, DB는 `supabase/ranking.sql`.
+- **계정(선택): 기록은 폰에서 잠근 뒤에만 서버로 가요.** 서버로 가는 건 아이디·출입증·잠긴 열쇠·잠긴 기록뿐이에요 (`src/lib/vault.ts`, `src/state/vault.ts`, DB는 `supabase/account.sql`). 비밀번호·금액·메모를 그대로 보내는 코드를 넣지 않아요. `vault.test.ts`가 지켜요.
+  - 서버 기록으로 폰 기록(`aggim-v1`)을 덮어쓰지 않아요. 언제나 합쳐요(`src/lib/merge.ts`의 `merge3`). 로그아웃·계정 지우기도 폰 기록은 남겨요.
 - 정산 메시지의 계좌번호는 `ssapgeoji-account`(이 폰)에만 저장해요. 기록(`aggim-v1`)·백업·서버에 넣지 않아요.

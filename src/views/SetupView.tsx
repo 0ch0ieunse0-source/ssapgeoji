@@ -12,12 +12,13 @@ import { Icon } from "../components/common";
 import { ACCENTS, accentLabel, accentOf, applyAccent, type AccentId } from "../lib/theme";
 import { currentUnread } from "../notices";
 import { useApp } from "../state/app";
+import { AccountView } from "./AccountView";
 
 const DEFAULTS: Partial<Settings> = { cycleDay: 1, total: 0, apptLimit: 30000, appts: [], fixed: [], autoLimits: true };
 const intOrNull = (s: string) => parseInt(s, 10) || null;
 
 export function SetupView({ section = "" }: { section?: string }) {
-  const { S, today, update, replace, setView, toast, go, goBack, bumpForm, openGuide } = useApp();
+  const { S, today, update, replace, setView, toast, go, goBack, bumpForm, openGuide, account } = useApp();
   const cfg = S.settings;
   const c = cfg || DEFAULTS;
   // 처음에 '나중에 입력하기'로 시작해서 생활비가 비어 있어요
@@ -589,6 +590,10 @@ export function SetupView({ section = "" }: { section?: string }) {
   const restoreCard = (
     <section className="card setup-sec restore">
       <h2>전에 쓰던 기록이 있나요?</h2>
+      <button className="btn" onClick={() => go("setup/account")}>
+        로그인해서 이어 쓰기
+      </button>
+      <p className="hint">계정이 없다면 아래 방법으로 옮길 수 있어요.</p>
       <p className="hint">
         기록은 연 곳마다 따로 저장돼요. Safari, 홈 화면 아이콘, 카카오톡 안에서 연 화면은 서로의 기록을 볼 수 없어요. 쓰던 곳에서 <b>설정 → 기록 보관 → 백업 파일 저장</b>을 한 다음, 여기서 불러오면 그대로 이어서 쓸 수 있어요.
       </p>
@@ -606,6 +611,8 @@ export function SetupView({ section = "" }: { section?: string }) {
       )}
     </section>
   );
+
+  if (section === "account") return <AccountView />;
 
   // 처음 시작할 때: 두 장으로 나눠요. 둘 다 '나중에 입력하기'로 건너뛸 수 있어요
   if (!cfg) {
@@ -747,6 +754,7 @@ export function SetupView({ section = "" }: { section?: string }) {
         {row("look", "화면", (cfg.name || "이름 없음") + " · " + accentLabel(cfg.accent), () => go("setup/look"))}
       </section>
       <section className="card menu" aria-label="기록과 도움말">
+        {row("account", "계정", account.id ? account.id + "로 로그인됨" : "로그인하면 어디서 열어도 같은 기록 (선택)", () => go("setup/account"))}
         {row("data", "기록 보관", "백업 저장·불러오기, 모든 기록 지우기", () => go("setup/data"))}
         {row("notice", "공지사항", "", () => go("notice"), unread ? <span className="badge">{"새 소식 " + unread}</span> : undefined)}
         {row("install", "홈 화면에 추가하는 법", "Safari·Chrome에서 앱처럼 쓰기", () => openGuide(true))}

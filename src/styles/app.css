@@ -621,3 +621,13 @@ html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adj
 .restore h2 { font-size: 17px; margin: 0; }
 .restore .hint b { color: var(--ink); }
 .warn-note { background: var(--warn-soft); color: var(--ink); border-radius: 12px; padding: 10px 12px; }
+
+/* 계정 */
+.acct-form { display: flex; flex-direction: column; gap: 12px; }
+.acct-who { display: flex; flex-direction: column; gap: 2px; }
+.acct-who b { font-size: 20px; }
+.acct-st { font-size: 14px; color: var(--good); }
+.acct-st.saving { color: var(--muted); }
+.acct-st.error { color: var(--over); }
+.acct-info summary { cursor: pointer; font-weight: 600; }
+.acct-info ul { margin: 8px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
