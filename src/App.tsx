@@ -6,6 +6,7 @@ import { WhatsNew } from "./components/WhatsNew";
 import { UpdateToast } from "./components/UpdateToast";
 import { BANK_ROUTES, BankTabs, Banner, Dock, PeriodNav, Toast, TopBar } from "./components/Shell";
 import { SpaceView } from "./views/SpaceView";
+import { useWishSync } from "./state/useWishSync";
 import { DaySheet } from "./sheets/DaySheet";
 import { ApptSheet } from "./sheets/ApptSheet";
 import { EntrySheet } from "./sheets/EntrySheet";
@@ -21,6 +22,11 @@ import { SaveView } from "./views/SaveView";
 import { SetupView } from "./views/SetupView";
 
 const TAB_ROUTES: string[] = ["home", "ledger", "save", "flow", "goal", "space"];
+
+function WishSync() {
+  useWishSync();
+  return null;
+}
 
 function Shell() {
   const { model, route, sub, entry, dayKey, formNonce, appt, openAppt } = useApp();
@@ -63,6 +69,7 @@ function Shell() {
       <Onboarding />
       <UpdateToast />
       <WhatsNew />
+      {model && <WishSync />}
       <Toast />
     </>
   );

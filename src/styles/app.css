@@ -889,3 +889,23 @@ body.page-plain .acct-done i { box-shadow: 0 0 0 4px var(--surface); }
 .my-profile .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 .my-profile .btn svg { width: 18px; height: 18px; }
 .bank-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+/* 랭킹 프사 · 공개 설정 · 갖고 싶은 물건 */
+.rank-list li { grid-template-columns: 28px 36px minmax(0, 1fr) auto; }
+.rank-line { align-items: center; }
+.rank-top { list-style: none; margin: 4px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.rank-top li { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px; border-radius: 14px; background: var(--surface-2); position: relative; min-width: 0; }
+.rank-top li.me { background: var(--accent-soft); }
+.rank-top b { font-size: 13.5px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rank-top .rt-rank { position: absolute; top: 6px; left: 8px; font-size: 13px; font-weight: 700; color: var(--muted); }
+.rank-top li:first-child .rt-rank { color: #c08a12; }
+.show-list { list-style: none; margin: 0; padding: 0; }
+.show-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0; border-top: 1px solid var(--line); }
+.show-list li:first-child { border-top: none; }
+.show-list li > span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.show-list b { font-size: 16px; }
+.wish-pub { list-style: none; margin: 0; padding: 0; }
+.wish-pub li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 0; border-top: 1px solid var(--line); }
+.wish-pub li:first-child { border-top: none; }
+.wish-pub b { font-size: 15.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.badge.good { background: var(--good-soft); color: var(--good); }

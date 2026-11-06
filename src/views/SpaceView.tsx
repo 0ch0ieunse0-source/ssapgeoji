@@ -1,20 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Avatar } from "../components/Avatar";
 import { Icon } from "../components/common";
 import { PageHead } from "../components/PageHead";
 import { RoomScene } from "../components/RoomScene";
 import { COIN_MEMO_MAX, nextTier, ROOM_TIERS, tierOf } from "../lib/space";
 import { useApp } from "../state/app";
 import { loadRank } from "../state/rank";
-import { fetchSpace, fetchVisits, giveCoin, setAvatar, shrinkPhoto, type CoinVisit, type SpaceRow } from "../state/space";
+import { fetchExtra, fetchSpace, fetchVisits, giveCoin, setAvatar, shrinkPhoto, type CoinVisit, type SpaceExtra, type SpaceRow } from "../state/space";
+import type { PublicWish } from "../lib/space";
 
-/** 프로필 사진 (없으면 닉네임 첫 글자) */
-export function Avatar({ src, name, size = 44 }: { src?: string | null; name: string; size?: number }) {
-  return (
-    <span className="avatar" style={{ width: size, height: size, fontSize: size * 0.42 }} aria-hidden="true">
-      {src ? <img src={src} alt="" width={size} height={size} /> : (name || "?").slice(0, 1)}
-    </span>
-  );
-}
+export { Avatar };
 
 /** 사진 고르기 → 줄이기 → 올리기. 내 프로필(랭킹 프로필)이 있어야 해요 */
 export function AvatarPicker({ row, onDone }: { row: SpaceRow | null; onDone: (src: string | null) => void }) {
@@ -91,7 +86,35 @@ function CoinBar({ coins }: { coins: number }) {
   );
 }
 
-function Visits({ code, reload }: { code: string; reload: number }) {
+function WishList({ wish, mine }: { wish: PublicWish[] | null | undefined; mine?: boolean }) {
+  const today = new Date();
+  const dleft = (d: string) => Math.ceil((new Date(d + "T00:00:00").getTime() - new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime()) / 864e5);
+  if (!wish) return null;
+  return (
+    <section className="card">
+      <div className="card-head">
+        <h2>갖고 싶은 물건</h2>
+        {mine && <span className="k">친구에게 이렇게 보여요</span>}
+      </div>
+      {!wish.length && <p className="hint">{mine ? "아끼기의 '사고 싶은 것'에 넣으면 여기 보여요." : "지금 참고 있는 물건이 없어요."}</p>}
+      <ul className="wish-pub">
+        {wish.map((w, i) => {
+          const n = dleft(w.d);
+          return (
+            <li key={i}>
+              <b>{w.n}</b>
+              <span className={"badge" + (w.s === "bought" ? " over" : w.s === "skip" ? " good" : "")}>
+                {w.s === "wait" ? (n > 0 ? "참는 중 D-" + n : "고민 끝") : w.s === "skip" ? "참았어요 👏" : "결국 샀어요"}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+function Visits({ code, reload, hidden }: { code: string; reload: number; hidden?: boolean }) {
   const [list, setList] = useState<CoinVisit[] | null>(null);
   useEffect(() => {
     fetchVisits(code).then(setList, () => setList([]));
@@ -101,8 +124,9 @@ function Visits({ code, reload }: { code: string; reload: number }) {
       <div className="card-head">
         <h2>최근 동전</h2>
       </div>
-      {list === null && <p className="hint">불러오는 중…</p>}
-      {list && !list.length && <p className="hint">아직 동전을 받은 적이 없어요.</p>}
+      {hidden && <p className="hint">최근 동전을 공개하지 않은 방이에요.</p>}
+      {!hidden && list === null && <p className="hint">불러오는 중…</p>}
+      {!hidden && list && !list.length && <p className="hint">아직 동전을 받은 적이 없어요.</p>}
       <ul className="visits">
         {(list || []).map((v, i) => (
           <li key={i}>
@@ -124,6 +148,7 @@ export function SpaceView({ sub = "" }: { sub?: string }) {
   const { go, toast } = useApp();
   const me = loadRank();
   const [rows, setRows] = useState<SpaceRow[] | null>(null);
+  const [extra, setExtra] = useState<Record<string, SpaceExtra>>({});
   const [err, setErr] = useState(false);
   const [reload, setReload] = useState(0);
   const [memo, setMemo] = useState("");
@@ -133,6 +158,8 @@ export function SpaceView({ sub = "" }: { sub?: string }) {
     if (!me) return;
     setErr(false);
     fetchSpace([me.code, ...me.friends]).then(setRows, () => setErr(true));
+    // 갖고 싶은 물건 · 최근 동전 공개 여부 (서버에 아직 없으면 그냥 안 보여요)
+    fetchExtra([me.code, ...me.friends]).then((x) => setExtra(Object.fromEntries(x.map((e) => [e.code, e]))), () => undefined);
   }, [me?.code, me?.friends.join()]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     load();
@@ -232,7 +259,8 @@ export function SpaceView({ sub = "" }: { sub?: string }) {
                 <p className="hint">한 친구에게 하루 1개 줄 수 있어요. 진짜 돈이 아니에요.</p>
               </section>
             )}
-            <Visits code={f.code} reload={reload} />
+            <WishList wish={extra[f.code]?.wish} />
+            <Visits code={f.code} reload={reload} hidden={extra[f.code] ? !extra[f.code].visits : false} />
           </>
         )}
       </div>
@@ -300,7 +328,11 @@ export function SpaceView({ sub = "" }: { sub?: string }) {
         </ul>
       </section>
 
+      <WishList wish={extra[me.code] ? extra[me.code].wish : null} mine />
       <Visits code={me.code} reload={reload} />
+      <button className="link" style={{ alignSelf: "center" }} onClick={() => go("setup/share")}>
+        친구에게 보여줄 것 고르기
+      </button>
     </div>
   );
 }

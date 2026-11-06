@@ -4,6 +4,7 @@ import { useRank } from "../state/useRank";
 import { BrokeBadge } from "../views/RankView";
 import { Icon, pressable } from "./common";
 import { RankEvents } from "./RankEvents";
+import { Avatar } from "./Avatar";
 
 /** 홈 가운데의 친구 랭킹 요약 카드 */
 export function RankCard() {
@@ -13,7 +14,8 @@ export function RankCard() {
 
 function RankCardInner() {
   const { go } = useApp();
-  const { local, rows, error, season } = useRank();
+  const { local, rows, error, season, avatars } = useRank();
+  const top = (rows || []).filter((r) => r.state === "ranked").slice(0, 3);
   const me = rows?.find((r) => r.code === local?.code);
   const ranked = rows?.filter((r) => r.state === "ranked").length || 0;
   let line = "친구와 누가 더 잘 지키나 겨뤄보세요";
@@ -34,9 +36,22 @@ function RankCardInner() {
         </span>
       </div>
       <div className="rank-line">
+        {local && <Avatar src={avatars[local.code]} name={local.nickname} size={32} />}
         <span>{line}</span>
         {me?.state === "ranked" && me.broke && <BrokeBadge />}
       </div>
+      {top.length > 1 && (
+        <ol className="rank-top" aria-label="이번 시즌 상위">
+          {top.map((r) => (
+            <li key={r.code} className={r.code === local?.code ? "me" : undefined}>
+              <span className="rt-rank">{r.rank}</span>
+              <Avatar src={avatars[r.code]} name={r.nickname} size={40} />
+              <b>{r.nickname}</b>
+              <span className="k">{r.pct + "%"}</span>
+            </li>
+          ))}
+        </ol>
+      )}
     </section>
     </>
   );

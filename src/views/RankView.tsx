@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { PageHead } from "../components/PageHead";
+import { Avatar } from "../components/Avatar";
 import { Sheet, SheetHead } from "../components/Sheet";
 import { md, sd, dOf } from "../lib/date";
 import { nextAnnounce, normalizeCode, type RankedRow } from "../lib/rank";
@@ -22,7 +23,7 @@ function resultText(r: RankedRow) {
 /** 친구 랭킹 페이지. 금액은 보이지도, 보내지도 않아요. */
 export function RankView({ sub = "" }: { sub?: string }) {
   const { model, today, toast, go, goBack } = useApp();
-  const { local, rows, error, season, refresh, update, score } = useRank();
+  const { local, rows, error, season, refresh, update, score, avatars } = useRank();
   const [nick, setNick] = useState(model?.cfg.name || "");
   const [askOpen, setAskOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -309,6 +310,7 @@ export function RankView({ sub = "" }: { sub?: string }) {
               {rows.map((r) => (
                 <li key={r.code} className={r.code === local.code ? "me" : undefined}>
                   <span className="rk">{r.rank ?? "-"}</span>
+                  <Avatar src={avatars[r.code]} name={r.nickname} size={36} />
                   <span className="rn">
                     <b>
                       {r.nickname}

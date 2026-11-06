@@ -14,6 +14,7 @@ import { currentUnread } from "../notices";
 import { useApp } from "../state/app";
 import { AccountView } from "./AccountView";
 import { MyProfile } from "./MyProfile";
+import { SpaceShowView } from "./SpaceShowView";
 
 const DEFAULTS: Partial<Settings> = { cycleDay: 1, total: 0, apptLimit: 30000, appts: [], fixed: [], autoLimits: true };
 const intOrNull = (s: string) => parseInt(s, 10) || null;
@@ -619,6 +620,7 @@ export function SetupView({ section = "" }: { section?: string }) {
   );
 
   if (section === "account") return <AccountView />;
+  if (section === "share") return <SpaceShowView />;
 
   // 처음 시작할 때: 두 장으로 나눠요. 둘 다 '나중에 입력하기'로 건너뛸 수 있어요
   if (!cfg) {
@@ -764,6 +766,7 @@ export function SetupView({ section = "" }: { section?: string }) {
       </section>
       <section className="card menu" aria-label="기록과 도움말">
         {row("account", "계정", account.id ? account.id + "로 로그인됨" : "로그인하면 어디서 열어도 같은 기록 (선택)", () => go("setup/account"), account.id ? undefined : <span className="badge">추천</span>)}
+        {row("share", "스페이스 공개 설정", "친구가 내 방에서 볼 수 있는 것", () => go("setup/share"))}
         {row("data", "기록 보관", "백업 저장·불러오기, 모든 기록 지우기", () => go("setup/data"))}
         {row("notice", "공지사항", "", () => go("notice"), unread ? <span className="badge">{"새 소식 " + unread}</span> : undefined)}
         {row("install", "홈 화면에 추가하는 법", "Safari·Chrome에서 앱처럼 쓰기", () => openGuide(true))}
