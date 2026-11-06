@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { applyAccent } from "./lib/theme";
 import { Onboarding } from "./components/Onboarding";
+import { WhatsNew } from "./components/WhatsNew";
 import { UpdateToast } from "./components/UpdateToast";
 import { Banner, Dock, PeriodNav, Toast, TopBar } from "./components/Shell";
 import { DaySheet } from "./sheets/DaySheet";
@@ -54,6 +55,7 @@ function Shell() {
       <EntrySheet />
       <Onboarding />
       <UpdateToast />
+      <WhatsNew />
       <Toast />
     </>
   );

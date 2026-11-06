@@ -813,3 +813,28 @@ body.page-plain .acct-done i { box-shadow: 0 0 0 4px var(--surface); }
 .switch input:checked + span::after { transform: translateX(20px); }
 .switch input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .switch span, .switch span::after, .he-list li { transition: none; } }
+
+/* 업데이트 안내 팝업 */
+.wn { display: flex; flex-direction: column; gap: 12px; }
+.wn-badge { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; color: var(--accent); background: var(--accent-soft); border-radius: 99px; padding: 4px 10px; }
+.wn-badge svg { width: 14px; height: 14px; }
+.wn h2 { margin: 0; font-size: 20px; letter-spacing: -0.02em; }
+.wn ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 14.5px; color: var(--muted); line-height: 1.5; max-height: 46vh; overflow: auto; }
+.wn-acts { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; margin-top: 4px; }
+.wn-acts .btn { min-height: 52px; }
+
+/* 홈 맨 위 로그인 배너 (광고 띠처럼, X로 닫기) */
+.ad-banner { position: relative; display: flex; align-items: center; background: var(--surface); border-radius: 16px; min-height: 64px; }
+.ad-main { all: unset; box-sizing: border-box; flex: 1; min-width: 0; display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 12px 4px 12px 14px; cursor: pointer; border-radius: 16px; }
+.ad-main:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ad-main > i { width: 36px; height: 36px; border-radius: 11px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; }
+.ad-main > i svg { width: 20px; height: 20px; }
+.ad-main > span:nth-child(2) { display: flex; flex-direction: column; min-width: 0; }
+.ad-main b { font-size: 14.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ad-main span span { font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ad-main .chev { color: var(--muted); display: flex; }
+.ad-main .chev svg { width: 16px; height: 16px; }
+.ad-x { flex: none; border: none; background: none; width: 44px; height: 44px; color: var(--muted); font-size: 15px; cursor: pointer; border-radius: 12px; }
+.sheet.pop:focus { outline: none; }
+.wn-acts { grid-template-columns: 1fr 1.5fr; }
+.wn-acts .btn { white-space: nowrap; padding: 0 12px; }

@@ -20,7 +20,7 @@ import { tripSpent } from "../lib/trip";
 import { shiftPeriod } from "../lib/period";
 import { movedIn, savedTotal, waitLeft } from "../lib/savings";
 import { useApp, useModel } from "../state/app";
-import { shouldNudge } from "../lib/nudge";
+import { loginBanner } from "../lib/nudge";
 import { Icon } from "../components/common";
 
 const NUDGE_KEY = "ssapgeoji-nudge-snooze";
@@ -36,7 +36,7 @@ export function HomeView() {
   const { S, today, update, toast, go, openEntry, openDay, toggleNoSpend, account } = useApp();
   const [snoozedOn, setSnoozedOn] = useState(readSnooze);
   const [editing, setEditing] = useState(false);
-  const nudge = shouldNudge({ loggedIn: !!account.id, days: S.days, today, snoozedOn });
+  const banner = loginBanner({ loggedIn: !!account.id, days: S.days, today, snoozedOn });
   const snooze = () => {
     try {
       localStorage.setItem(NUDGE_KEY, today);
@@ -287,6 +287,24 @@ export function HomeView() {
 
   return (
     <div className="view home2">
+      {banner >= 0 && (
+        <div className="ad-banner">
+          <button className="ad-main" onClick={() => go("setup/account")}>
+            <i aria-hidden="true">{Icon.shield}</i>
+            <span>
+              <b>{banner > 0 ? "기록 " + banner + "건, 잠가서 보관하세요" : "로그인하면 어디서든 같은 기록"}</b>
+              <span>로그인하면 폰을 바꿔도 그대로 이어서 써요</span>
+            </span>
+            <span className="chev" aria-hidden="true">
+              {Icon.next}
+            </span>
+          </button>
+          <button className="ad-x" aria-label="로그인 안내 닫기" onClick={snooze}>
+            ✕
+          </button>
+        </div>
+      )}
+
       <section className="hero" aria-label="생활비 요약">
         <div>
           <div className="eyebrow">{(isCur ? "이번 달" : sd(view.start) + "~" + sd(view.end)) + " 생활비 " + man(total) + "원 중 남은 돈"}</div>
@@ -318,26 +336,6 @@ export function HomeView() {
           <button className="btn line" onClick={() => go("setup/data")}>
             백업 불러오러 가기
           </button>
-        </section>
-      )}
-
-      {nudge > 0 && (
-        <section className="card nudge" aria-label="기록 보관">
-          <div className="nudge-h">
-            <i className="acct-ri">{Icon.shield}</i>
-            <span>
-              <b>{"기록 " + nudge + "건, 이 폰에만 있어요"}</b>
-              <span>브라우저 기록을 지우거나 폰을 바꾸면 사라질 수 있어요. 30초면 잠가서 보관해요.</span>
-            </span>
-          </div>
-          <div className="nudge-b">
-            <button className="btn gray" onClick={snooze}>
-              다음에
-            </button>
-            <button className="btn" onClick={() => go("setup/account")}>
-              보관하기
-            </button>
-          </div>
         </section>
       )}
 
