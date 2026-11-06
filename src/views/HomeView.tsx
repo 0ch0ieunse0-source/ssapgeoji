@@ -18,9 +18,30 @@ import { tripSpent } from "../lib/trip";
 import { shiftPeriod } from "../lib/period";
 import { movedIn, savedTotal, waitLeft } from "../lib/savings";
 import { useApp, useModel } from "../state/app";
+import { shouldNudge } from "../lib/nudge";
+import { Icon } from "../components/common";
+
+const NUDGE_KEY = "ssapgeoji-nudge-snooze";
+const readSnooze = () => {
+  try {
+    return localStorage.getItem(NUDGE_KEY);
+  } catch {
+    return null;
+  }
+};
 
 export function HomeView() {
-  const { S, today, update, toast, go, openEntry, openDay, toggleNoSpend } = useApp();
+  const { S, today, update, toast, go, openEntry, openDay, toggleNoSpend, account } = useApp();
+  const [snoozedOn, setSnoozedOn] = useState(readSnooze);
+  const nudge = shouldNudge({ loggedIn: !!account.id, days: S.days, today, snoozedOn });
+  const snooze = () => {
+    try {
+      localStorage.setItem(NUDGE_KEY, today);
+    } catch {
+      /* 저장이 막혀 있으면 이번에만 닫혀요 */
+    }
+    setSnoozedOn(today);
+  };
   const { cfg, days, weeks, view, cur, isCur, refKey, dayByKey, L, budget } = useModel();
   const D = L; // 생활비 계산용
   const R = S.days; // 실제 기록 (목록·받을 돈·카드)
@@ -132,6 +153,26 @@ export function HomeView() {
           <button className="btn line" onClick={() => go("setup/data")}>
             백업 불러오러 가기
           </button>
+        </section>
+      )}
+
+      {nudge > 0 && (
+        <section className="card nudge" aria-label="기록 보관">
+          <div className="nudge-h">
+            <i className="acct-ri">{Icon.shield}</i>
+            <span>
+              <b>{"기록 " + nudge + "건, 이 폰에만 있어요"}</b>
+              <span>브라우저 기록을 지우거나 폰을 바꾸면 사라질 수 있어요. 30초면 잠가서 보관해요.</span>
+            </span>
+          </div>
+          <div className="nudge-b">
+            <button className="btn gray" onClick={snooze}>
+              다음에
+            </button>
+            <button className="btn" onClick={() => go("setup/account")}>
+              보관하기
+            </button>
+          </div>
         </section>
       )}
 

@@ -626,8 +626,73 @@ html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adj
 .acct-form { display: flex; flex-direction: column; gap: 12px; }
 .acct-who { display: flex; flex-direction: column; gap: 2px; }
 .acct-who b { font-size: 20px; }
-.acct-st { font-size: 14px; color: var(--good); }
+.acct-st { font-size: 13.5px; color: var(--good); }
 .acct-st.saving { color: var(--muted); }
 .acct-st.error { color: var(--over); }
 .acct-info summary { cursor: pointer; font-weight: 600; }
 .acct-info ul { margin: 8px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+
+/* ── 계정 화면 (가입·로그인) ── */
+.view.acct { min-height: calc(100svh - 60px - env(safe-area-inset-top, 0px)); }
+.acct-body { display: flex; flex-direction: column; flex: 1; gap: 0; }
+.acct-body.center { align-items: center; text-align: center; }
+.acct-prog { height: 3px; border-radius: 3px; background: var(--surface-2); margin-top: -8px; overflow: hidden; }
+.acct-prog i { display: block; height: 100%; background: var(--accent); border-radius: 3px; transition: width .3s; }
+.acct-h { font-size: 26px; line-height: 1.35; letter-spacing: -0.03em; margin: 18px 0 8px; outline: none; }
+.acct-sub { font-size: 15px; color: var(--muted); line-height: 1.55; margin: 0 0 26px; }
+.acct-f { display: flex; flex-direction: column; gap: 4px; margin-bottom: 18px; }
+.acct-f label { font-size: 13px; font-weight: 600; color: var(--muted); }
+.acct-f:focus-within label { color: var(--accent); }
+.acct-in { display: flex; align-items: center; border-bottom: 2px solid var(--line); }
+.acct-f:focus-within .acct-in { border-bottom-color: var(--accent); }
+.acct-in input { flex: 1; background: none; border: none; border-radius: 0; padding: 10px 0; font-size: 20px; font-weight: 600; min-height: 48px; }
+.acct-in input::placeholder { font-weight: 400; color: #9aa19d; }
+.acct-in input:focus-visible { outline: none; }
+.acct-eye { border: none; background: none; width: 44px; height: 44px; display: grid; place-items: center; color: var(--muted); cursor: pointer; }
+.acct-eye svg { width: 22px; height: 22px; }
+.acct-note { display: flex; align-items: center; gap: 4px; font-size: 13.5px; color: var(--muted); margin: 6px 0 0; min-height: 20px; }
+.acct-note svg { width: 16px; height: 16px; }
+.acct-note.good { color: var(--accent); }
+.acct-note.bad { color: var(--over); }
+.acct-err { color: var(--over); font-size: 14px; margin: 8px 0 0; }
+.acct-cta { margin-top: auto; position: sticky; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 6px; padding-top: 16px; background: linear-gradient(transparent, var(--bg) 24px); }
+.acct-btn { min-height: 56px; border-radius: 16px; font-size: 17px; }
+.btn.dark { background: var(--ink); color: var(--surface); }
+.acct-face { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.acct-face svg { width: 24px; height: 24px; }
+.acct-or { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; margin: 22px 0 14px; }
+.acct-or::before, .acct-or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.acct-later { align-self: center; color: var(--muted); font-weight: 500; font-size: 15px; min-height: 44px; }
+.acct-later b { color: var(--accent); }
+.acct-ben { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 20px; }
+.acct-ben li { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 14px; align-items: center; font-size: 14.5px; color: var(--muted); line-height: 1.45; }
+.acct-ben li b { display: block; font-size: 16px; color: var(--ink); }
+.acct-ben i, .acct-art { display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
+.acct-ben i { width: 44px; height: 44px; border-radius: 14px; }
+.acct-ben svg { width: 24px; height: 24px; }
+.acct-art { width: 104px; height: 104px; border-radius: 30px; margin: 40px auto 8px; }
+.acct-art svg { width: 56px; height: 56px; }
+.acct-done { position: relative; margin: 30px auto 4px; }
+.acct-done img { width: 150px; height: auto; display: block; }
+.acct-done i { position: absolute; right: -4px; bottom: 6px; width: 44px; height: 44px; border-radius: 50%; background: var(--accent); color: var(--surface); display: grid; place-items: center; box-shadow: 0 0 0 4px var(--bg); }
+.acct-done i svg { width: 24px; height: 24px; }
+.acct-list { list-style: none; margin: 6px 0 0; padding: 16px; background: var(--surface); border-radius: 16px; display: flex; flex-direction: column; gap: 10px; text-align: left; width: 100%; font-size: 15px; }
+.acct-list li { display: flex; align-items: flex-start; gap: 8px; }
+.acct-list svg { width: 18px; height: 18px; color: var(--accent); flex: none; margin-top: 2px; }
+.acct-forgot { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 12px; font-size: 14.5px; color: var(--muted); line-height: 1.5; }
+.acct-forgot b { display: block; color: var(--ink); }
+.acct-who { display: flex; align-items: center; gap: 12px; }
+.acct-who > span { display: flex; flex-direction: column; }
+.acct-who b { font-size: 19px; }
+.acct-ri { width: 40px; height: 40px; border-radius: 12px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; flex: none; }
+.acct-ri svg { width: 22px; height: 22px; }
+.acct-row { grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; }
+.nudge { gap: 14px; }
+.nudge-h { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; align-items: start; }
+.nudge-h > span { display: flex; flex-direction: column; gap: 2px; }
+.nudge-h b { font-size: 16px; }
+.nudge-h span span { font-size: 13.5px; color: var(--muted); line-height: 1.45; }
+.nudge-b { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; }
+.nudge-b .btn { min-height: 44px; padding: 0 12px; border-radius: 12px; font-size: 15px; }
+.btn.gray { background: var(--surface-2); color: var(--ink); }
+.acct-who { flex-direction: row; align-items: center; gap: 12px; }

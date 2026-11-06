@@ -551,6 +551,11 @@ export function SetupView({ section = "" }: { section?: string }) {
       <section className="card setup-sec">
           <h2>기록 보관</h2>
           <p className="hint">기록은 이 기기의 브라우저에만 저장돼요. 기기를 바꾸거나 브라우저 기록을 지우기 전에 백업 파일을 저장해 두세요.</p>
+          {!account.id && (
+            <button className="link" style={{ textAlign: "left" }} onClick={() => go("setup/account")}>
+              로그인해 두면 백업 없이도 자동으로 보관돼요 →
+            </button>
+          )}
           <div className="row">
             <button className="btn line" style={{ flex: 1 }} onClick={saveBackup}>
               백업 파일 저장
@@ -754,7 +759,7 @@ export function SetupView({ section = "" }: { section?: string }) {
         {row("look", "화면", (cfg.name || "이름 없음") + " · " + accentLabel(cfg.accent), () => go("setup/look"))}
       </section>
       <section className="card menu" aria-label="기록과 도움말">
-        {row("account", "계정", account.id ? account.id + "로 로그인됨" : "로그인하면 어디서 열어도 같은 기록 (선택)", () => go("setup/account"))}
+        {row("account", "계정", account.id ? account.id + "로 로그인됨" : "로그인하면 어디서 열어도 같은 기록 (선택)", () => go("setup/account"), account.id ? undefined : <span className="badge">추천</span>)}
         {row("data", "기록 보관", "백업 저장·불러오기, 모든 기록 지우기", () => go("setup/data"))}
         {row("notice", "공지사항", "", () => go("notice"), unread ? <span className="badge">{"새 소식 " + unread}</span> : undefined)}
         {row("install", "홈 화면에 추가하는 법", "Safari·Chrome에서 앱처럼 쓰기", () => openGuide(true))}

@@ -80,6 +80,49 @@ export function BigWon({ n }: { n: number }) {
 
 const svg = { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "aria-hidden": true } as const;
 export const Icon = {
+  // 계정 화면용 라인 아이콘
+  lock: (
+    <svg {...svg} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="5" y="10.5" width="14" height="10" rx="2.5" />
+      <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
+      <path d="M12 14.5v2.5" />
+    </svg>
+  ),
+  cloud: (
+    <svg {...svg} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M7 18.5h10a4 4 0 0 0 .6-7.95A5.5 5.5 0 0 0 7.1 9.6 4.5 4.5 0 0 0 7 18.5z" />
+      <path d="M9.5 14l2 2 3.5-3.5" />
+    </svg>
+  ),
+  faceid: (
+    <svg {...svg} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 8V6.5A2.5 2.5 0 0 1 6.5 4H8M16 4h1.5A2.5 2.5 0 0 1 20 6.5V8M20 16v1.5a2.5 2.5 0 0 1-2.5 2.5H16M8 20H6.5A2.5 2.5 0 0 1 4 17.5V16" />
+      <path d="M9 9.5v1M15 9.5v1M12 9.5v3.5h-1M9.5 15.5a3.5 3.5 0 0 0 5 0" />
+    </svg>
+  ),
+  check: (
+    <svg {...svg} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 12.5l4.5 4.5L19 7.5" />
+    </svg>
+  ),
+  eye: (
+    <svg {...svg} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  ),
+  eyeOff: (
+    <svg {...svg} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 3l18 18M10.6 6.1A8.6 8.6 0 0 1 12 6c6 0 9.5 6 9.5 6a16 16 0 0 1-2.7 3.4M6.6 6.6C3.9 8.4 2.5 12 2.5 12S6 18.5 12 18.5a8.8 8.8 0 0 0 4.4-1.2" />
+      <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
+    </svg>
+  ),
+  shield: (
+    <svg {...svg} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3l7.5 3v5.5c0 4.5-3.2 8.2-7.5 9.5-4.3-1.3-7.5-5-7.5-9.5V6L12 3z" />
+      <path d="M9 12l2 2 4-4" />
+    </svg>
+  ),
   bell: (
     <svg {...svg} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M6 9a6 6 0 0 1 12 0c0 5 2 6.5 2 6.5H4S6 14 6 9z" />

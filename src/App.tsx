@@ -45,7 +45,7 @@ function Shell() {
         </main>
         {!model && <footer>기록은 이 기기의 브라우저에만 저장되고 다른 사람은 볼 수 없어요. 설정에서 백업 파일을 저장해 두면 다른 기기로 옮길 수 있어요.</footer>}
       </div>
-      {model && <Dock />}
+      {model && !(route === "setup" && sub === "account") && <Dock />}
       <DaySheet />
       {model && <ApptSheet target={appt} onClose={() => openAppt(null)} />}
       <EntrySheet />
