@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { reloadUrl, shouldNotifyUpdate } from "../lib/update";
+import { useApp } from "../state/app";
 
 const DISMISS_KEY = "ssapgeoji-update-dismissed";
 const readDismissed = () => {
@@ -41,7 +42,10 @@ export function UpdateToast() {
     };
   }, []);
 
-  const show = shouldNotifyUpdate(server, __APP_VERSION__, dismissed);
+  // 뭔가 적고 있는 동안(쓴 돈 적기·하루 카드·약속, 설정·정산 페이지)에는 띄우지 않아요. 새로고침하면 적던 게 사라져요.
+  const { entry, dayKey, appt, route, model } = useApp();
+  const busy = !model || entry.open || !!dayKey || !!appt || route === "setup" || route === "settle" || route === "rank";
+  const show = !busy && shouldNotifyUpdate(server, __APP_VERSION__, dismissed);
   const keep = () => {
     try {
       sessionStorage.setItem(DISMISS_KEY, server || "");
