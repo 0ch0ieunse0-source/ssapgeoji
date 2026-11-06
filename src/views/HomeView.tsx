@@ -100,7 +100,7 @@ export function HomeView() {
   };
 
   return (
-    <div className="view">
+    <div className="view home2">
       <section className="hero" aria-label="생활비 요약">
         <div>
           <div className="eyebrow">{(isCur ? "이번 달" : sd(view.start) + "~" + sd(view.end)) + " 생활비 " + man(total) + "원 중 남은 돈"}</div>

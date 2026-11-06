@@ -616,3 +616,39 @@ html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adj
 .gear-tip-x { width: 32px; opacity: 0.7; }
 
 .preview-banner { background: var(--surface-2); color: var(--muted); }
+
+/* ── 디자인 정리 (홈 먼저): 그림자 없이 선과 글자 크기로 나눠요 ── */
+.home2 { gap: 12px; }
+.home2 .card { box-shadow: none; border-radius: 20px; padding: 20px; gap: 14px; }
+.home2 .card h2 { font-size: 18px; letter-spacing: -0.02em; }
+.home2 .card-head .k, .home2 .hint { font-size: 13px; }
+.home2 .hero { border-radius: 20px; padding: 24px 20px 20px; gap: 16px; }
+.home2 .hero .eyebrow { font-size: 15px; }
+.home2 .track { height: 6px; }
+.home2 .hero-row { gap: 0; border-top: 1px solid var(--hero-track); padding-top: 16px; }
+.home2 .hero-row > div { background: none; border-radius: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.home2 .hero-row > div + div { border-left: 1px solid var(--hero-track); padding-left: 16px; }
+.home2 .hero-row .k { font-size: 13px; }
+.home2 .hero-row .v { font-size: 20px; letter-spacing: -0.02em; }
+.home2 .stats { background: var(--surface); border-radius: 20px; padding: 18px 0; gap: 0; }
+.home2 .stat { background: none; box-shadow: none; border-radius: 0; padding: 0 16px; gap: 4px; color: inherit; font: inherit; }
+.home2 .stat + .stat { border-left: 1px solid var(--line); }
+.home2 .stat .k { font-size: 13px; }
+.home2 .stat .v { font-size: 18px; letter-spacing: -0.02em; }
+.home2 .tx li { padding: 12px 0; }
+.home2 .tx .t b { font-size: 16px; }
+.home2 .tx .t span { font-size: 13px; }
+.home2 .tx .a b { font-size: 16px; }
+.home2 .empty-box { border-radius: 14px; padding: 16px; font-size: 15px; }
+.home2 .btn.soft, .home2 .btn.line { min-height: 38px; padding: 0 14px; border-radius: 10px; font-size: 15px; font-weight: 600; }
+.home2 .mini-btns .btn { min-height: 32px; padding: 0 10px !important; border-radius: 8px; font-size: 13px !important; }
+.home2 .legend { gap: 10px; }
+.home2 .legend li { font-size: 15px; }
+.home2 .insight { background: none; border-radius: 0; padding: 16px 0 0; border-top: 1px solid var(--line); font-size: 15px; gap: 6px; }
+.home2 .insight .k { font-size: 14px; }
+.home2 .tiles { grid-template-columns: 1fr; gap: 0; }
+.home2 .tile { background: none; border-radius: 0; padding: 12px 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; row-gap: 2px; }
+.home2 .tile + .tile { border-top: 1px solid var(--line); }
+.home2 .tile:first-child { padding-top: 0; }
+.home2 .tile .k:first-child { font-size: 15px; color: var(--ink); }
+.home2 .tile .v { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-size: 17px; }
