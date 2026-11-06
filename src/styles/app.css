@@ -652,3 +652,23 @@ html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adj
 .home2 .tile:first-child { padding-top: 0; }
 .home2 .tile .k:first-child { font-size: 15px; color: var(--ink); }
 .home2 .tile .v { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-size: 17px; }
+
+/* 정산 차수: '명'이 달력(.rp)과 같은 이름이라 아래로 떨어지던 것 바로잡기 */
+.round .rp { flex-direction: row; gap: 4px; }
+.round .rp input { flex: 1 1 auto; }
+.round .rp span { flex: none; }
+
+/* 하루 카드의 약속 추가 버튼은 메인 컬러 */
+.dc-appt, .dc-appt.trip { background: var(--accent); color: var(--surface); border: none; }
+
+/* 위쪽 헤더: 스크롤해도 위에 붙어 있어요 */
+.top, .page-head, .st-head {
+  position: sticky; top: 0; z-index: 30; background: var(--bg);
+  margin: calc(-18px - env(safe-area-inset-top, 0px)) -16px 0;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px;
+}
+/* 탭이 아닌 페이지: 왼쪽 뒤로가기 + 가운데 페이지 이름 (일반 앱처럼) */
+.page-head, .st-head { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; gap: 4px; min-height: calc(56px + env(safe-area-inset-top, 0px)); }
+.page-head h1, .st-head h1 { font-size: 17px; font-weight: 700; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.page-head .pbtn, .st-head .pbtn { background: transparent; box-shadow: none; width: 44px; height: 44px; }
+.st-head > .k { text-align: right; }

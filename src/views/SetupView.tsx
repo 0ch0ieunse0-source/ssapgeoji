@@ -704,9 +704,7 @@ export function SetupView({ section = "" }: { section?: string }) {
   );
   return (
     <div className="view">
-      <div className="page-head">
-        <h1>설정</h1>
-      </div>
+      <PageHead title="설정" fallback="home" />
       <section className="card menu" aria-label="내 설정">
         {row("budget", "생활비와 한도", blank ? "아직 안 넣었어요" : "매달 " + cfg.cycleDay + "일 시작 · 생활비 " + man(cfg.total) + "원", () => go("setup/budget"))}
         {row(

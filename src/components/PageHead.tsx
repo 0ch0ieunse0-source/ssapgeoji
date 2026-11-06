@@ -17,6 +17,7 @@ export function PageHead({ title, fallback }: { title: string; fallback: string 
       <h1 ref={ref} tabIndex={-1}>
         {title}
       </h1>
+      <span aria-hidden="true" />
     </div>
   );
 }
