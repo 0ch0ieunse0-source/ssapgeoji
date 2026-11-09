@@ -1,8 +1,9 @@
+import { lockTaps } from "../lib/tapLock";
 import { useEffect, useRef, useState } from "react";
 import { leftoverOf, type Leftover } from "../lib/flex";
 import { MoneyInput, SmallIco } from "../components/common";
 import { dOf, DOW, md, sd } from "../lib/date";
-import { fmt, man, parse, uid6, won } from "../lib/format";
+import { fmt, man, parse, parseSigned, uid6, won } from "../lib/format";
 import { countsFor, daysFor, periodOf, shiftPeriod, splitFor } from "../lib/period";
 import { tripLength, tripsOverlap, type Trip, type TripFund } from "../lib/trip";
 import { EMPTY, normalize } from "../lib/storage";
@@ -91,6 +92,11 @@ export function SetupView({ section = "" }: { section?: string }) {
   const preCut = preDays.reduce((x, d) => x + (d.preBase || 0), 0);
   const sum = counts.wd * parse(shownWd) + counts.we * parse(shownWe) + counts.ap * apl + (counts.trip || 0);
   const reserve = totalN - sum;
+  // 하루 한도 합계가 생활비보다 크면 저장하지 않아요 (홈 숫자가 서로 안 맞게 돼요)
+  const overErr = () =>
+    totalN > 0 && reserve < 0
+      ? "하루 한도 합계가 생활비보다 " + won(-reserve) + " 많아요. 생활비를 늘리거나 " + (auto ? "약속 날 한도를" : "하루 한도를") + " 줄여주세요."
+      : null;
 
   const changeCycle = (n: number) => {
     setCycle(n);
@@ -128,6 +134,7 @@ export function SetupView({ section = "" }: { section?: string }) {
   const addFixed = () => {
     const nm = fxName.trim(), dayN = parseInt(fxDay, 10), amount = parse(fxAmt);
     if (!nm || !dayN || !amount) return toast("이름, 날짜, 금액을 모두 적어주세요.", true);
+    if (dayN < 1 || dayN > 31) return toast("날짜는 1일부터 31일 사이로 넣어주세요.", true);
     setFixed([...fixed, { id: uid6(), name: nm, day: Math.min(31, Math.max(1, dayN)), amount }]);
     setFxName("");
     setFxDay("");
@@ -138,6 +145,8 @@ export function SetupView({ section = "" }: { section?: string }) {
   const saveSettings = (skip?: "all" | "optional") => {
     if (skip) {
       const all = skip === "all";
+      const oe = all ? null : overErr();
+      if (oe) return setErr(oe);
       update((d) => {
         d.settings = {
           name: all ? "" : name.trim(),
@@ -177,12 +186,19 @@ export function SetupView({ section = "" }: { section?: string }) {
     if (!totalN && !(blank && section !== "budget")) return setErr("한 달 생활비를 적어주세요.");
     const wdN = parse(shownWd), weN = parse(shownWe);
     if (!auto && !wdN && !weN) return setErr("하루 한도를 적거나 자동으로 나누기를 켜주세요.");
+    const oe = !section || section === "budget" ? overErr() : null;
+    if (oe) return setErr(oe);
     const paydayN = intOrNull(payday), cardPayN = intOrNull(cardPay), cardCutN = intOrNull(cardCut);
+    const badDay = ([["월급날", payday], ["카드 결제일", cardPay], ["카드 사용 마감일", cardCut]] as const).find(([, v]) => {
+      const t = v.trim();
+      return t !== "" && !(/^\d+$/.test(t) && +t >= 1 && +t <= 31);
+    });
+    if (badDay) return setErr(badDay[0] + "은 1일부터 31일 사이로 넣어주세요.");
     if ((cardPayN && !cardCutN) || (!cardPayN && cardCutN)) return setErr("신용카드는 결제일과 사용 마감일을 둘 다 넣어주세요.");
     const goalAmtN = parse(goalAmt) || null, goalDateV = goalDate || null;
     if ((goalAmtN && !goalDateV) || (!goalAmtN && goalDateV)) return setErr("저축 목표는 금액과 날짜를 둘 다 넣어주세요.");
     const prev = cfg;
-    const balRaw = balance.trim(), balanceN = balRaw ? parse(balRaw) : null;
+    const balRaw = balance.trim(), balanceN = balRaw && balRaw !== "-" ? parseSigned(balRaw) : null;
     const balanceChanged = !prev || balanceN !== prev.balance;
     const curStart = periodOf(today, cycle).start;
     const oldAppts = prev ? (prev.appts || []).filter((k) => k < curStart) : [];
@@ -226,6 +242,7 @@ export function SetupView({ section = "" }: { section?: string }) {
     appliedAccent.current = accent;
     setView(null);
     toast(prev ? "저장했어요. 이번 달부터 새 설정이 적용돼요." : "시작했어요.");
+    lockTaps();
     if (prev && section) goBack("setup");
     else go("home");
   };
@@ -486,7 +503,7 @@ export function SetupView({ section = "" }: { section?: string }) {
         <p className="hint">넣으면 '돈 일정' 탭에서 날짜별 통장 예상 잔액을 계산해요.</p>
         <div className="field">
           <label htmlFor="cBalance">지금 통장 잔액 (오늘 기준, 파킹통장 포함)</label>
-          <MoneyInput id="cBalance" value={balance} onValue={setBalance} placeholder="0" />
+          <MoneyInput id="cBalance" value={balance} onValue={setBalance} placeholder="0" signed />
         </div>
         <div className="row">
           <div className="field" style={{ flex: "1 1 100px" }}>
@@ -655,6 +672,8 @@ export function SetupView({ section = "" }: { section?: string }) {
   if (!cfg) {
     const goStep2 = () => {
       if (!totalN) return setErr("한 달 생활비를 적거나 '나중에 입력하기'를 눌러 주세요.");
+      const oe = overErr();
+      if (oe) return setErr(oe);
       setErr(null);
       setFstep(2);
       window.scrollTo(0, 0);

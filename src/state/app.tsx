@@ -8,7 +8,7 @@ import { budgetOf, daysFor, makePlan, periodOf, planFor, preZero, resplitPlans, 
 import { livingMap } from "../lib/trip";
 import { applyFlex, leftoverOf, type FlexInfo } from "../lib/flex";
 import { movedIn } from "../lib/savings";
-import { cloneData, loadData, saveData } from "../lib/storage";
+import { cloneData, DATA_KEY, loadData, parseStored, readRaw, saveData, withDisk } from "../lib/storage";
 import { onAppError, reportError } from "../lib/errors";
 import { merge3 } from "../lib/merge";
 import { errorText, loadSession, logOut, needsPush, pull, push, AccountError } from "./vault";
@@ -64,6 +64,9 @@ interface AppValue {
   refreshAccount: () => void;
   S: Data;
   storageOk: boolean;
+  /** 저장된 기록을 읽지 못했어요 (원본은 따로 보관) */
+  broken: boolean;
+  dismissBroken: () => void;
   now: Date; // 오늘 0시
   today: Key;
   tick: number; // 1분마다 바뀌어요 (대기 목록 남은 시간)
@@ -156,7 +159,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [init] = useState(() => loadData(today));
   const [S, setS] = useState<Data>(init.data);
   const [storageOk, setStorageOk] = useState(init.ok);
+  const [broken, setBroken] = useState(init.broken);
   const sRef = useRef(S);
+  // 이 창이 마지막으로 읽거나 쓴 기록·글자. 다른 창(탭)이 그사이 저장했는지 알아보고 합칠 때 써요.
+  const baseRef = useRef<Data>(init.data);
+  const rawRef = useRef<string | null>(init.raw);
+  const dayRef = useRef(today);
+  dayRef.current = today;
   const [viewP, setViewP] = useState<Period | null>(null);
   const [hash, setHash] = useState(readHash);
   const [tick, setTick] = useState(0);
@@ -178,6 +187,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setGuide({ open: false, safariOnly: false });
   }, []);
 
+  // 저장: 다른 창이 그사이 저장했으면 합친 뒤 써요 (덮어써서 다른 창 기록을 지우지 않게). merge=false는 백업 불러오기·전부 지우기처럼 통째로 바꿀 때.
+  const persist = useCallback((d: Data, merge = true) => {
+    const fin = merge ? withDisk(baseRef.current, d, readRaw(), rawRef.current, dayRef.current) : d;
+    sRef.current = fin;
+    setS(fin);
+    const raw = saveData(fin);
+    if (raw != null) {
+      rawRef.current = raw;
+      baseRef.current = fin;
+      // 읽지 못한 기록 안내는 백업을 불러오거나 전부 지울 때까지 남겨요 (원본은 따로 보관돼 있어요)
+      if (!merge) setBroken(false);
+    }
+    setStorageOk(raw != null);
+  }, []);
   // 기록 고치기: 사본에서 고친 뒤 문제가 없을 때만 저장해요. 고치다 오류가 나면 원래 기록은 그대로 둬요.
   const update = useCallback((fn: (d: Data) => void) => {
     let next: Data;
@@ -188,15 +211,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
       reportError(e, "save");
       return;
     }
-    sRef.current = next;
-    setS(next);
-    setStorageOk(saveData(next));
-  }, []);
-  const replace = useCallback((d: Data) => {
-    sRef.current = d;
-    setS(d);
-    setStorageOk(saveData(d));
-  }, []);
+    persist(next);
+  }, [persist]);
+  const replace = useCallback((d: Data) => persist(d, false), [persist]);
+  // 다른 창(탭)에서 저장하면 이 창도 바로 새 기록으로 바꿔요
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== DATA_KEY || e.newValue == null || e.newValue === rawRef.current) return;
+      const remote = parseStored(e.newValue, dayRef.current);
+      if (!remote) return;
+      const fin = merge3(baseRef.current, sRef.current, remote);
+      rawRef.current = e.newValue;
+      baseRef.current = remote;
+      if (JSON.stringify(fin) === JSON.stringify(remote)) {
+        sRef.current = remote;
+        setS(remote);
+      } else persist(fin);
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [persist]);
 
   // ── 계정(선택): 잠근 기록을 서버와 맞춰요. 폰 기록이 먼저고, 서버 것은 합치기만 해요 ──
   const readAccount = (): AccountState => {
@@ -224,9 +258,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (res) {
           // 맞추는 동안 이 폰에서 더 적었으면 그것도 같이 살려요
           const fin = sRef.current === start ? res : (merge3(start, sRef.current, res) as Data);
-          sRef.current = fin;
-          setS(fin);
-          setStorageOk(saveData(fin));
+          persist(fin);
         }
         const s = loadSession();
         setAccount({ id: s?.id || null, status: "saved", at: s?.syncedAt || null });
@@ -264,7 +296,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
   }, [account.id, syncNow]);
 
+  const toastAt = useRef(0);
   const toast = useCallback((text: string, err = false) => {
+    toastAt.current = Date.now();
     setToast((t) => ({ text, err, n: (t?.n || 0) + 1 }));
     window.clearTimeout(toastTimer.current);
     toastTimer.current = window.setTimeout(() => setToast(null), 3200);
@@ -284,7 +318,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [toast]);
 
   useEffect(() => {
-    const f = () => setHash(readHash());
+    const f = () => {
+      setHash(readHash());
+      // 화면을 옮기면 앞 화면에서 띄운 알림은 바로 닫아요 (저장하고 넘어가며 띄운 알림은 남겨요)
+      if (Date.now() - toastAt.current > 700) setToast(null);
+    };
     window.addEventListener("hashchange", f);
     // 홈 화면 앱은 새로고침 없이 다시 열리는 일이 많아서, 다시 볼 때와 1분마다 날짜가 바뀌었는지 확인해요
     const checkDay = () => {
@@ -424,7 +462,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const value: AppValue = {
     account, syncNow, refreshAccount,
-    S, storageOk, now, today, tick, model, route, sub: S.settings || sub === "account" ? sub : "", goBack,
+    S, storageOk, broken, dismissBroken: () => setBroken(false), now, today, tick, model, route, sub: S.settings || sub === "account" ? sub : "", goBack,
     update, replace, go, toast, toastState,
     setView: (p: Period | null) => {
       setSlideDir(0);

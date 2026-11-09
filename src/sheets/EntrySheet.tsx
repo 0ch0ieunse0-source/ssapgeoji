@@ -27,16 +27,36 @@ type Draft = {
 };
 
 /** 쓴 돈 적기·고치기. 닫아도 쓰던 값과 고른 분류·결제수단은 남아요 (고치기는 닫으면 원래대로). */
+const DRAFT_KEY = "ssapgeoji-entry-draft";
+function readDraft(): Partial<Draft> | null {
+  try {
+    const v = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || "null");
+    return v && typeof v === "object" ? v : null;
+  } catch {
+    return null;
+  }
+}
+function writeDraft(d: Partial<Draft> | null) {
+  try {
+    if (d) sessionStorage.setItem(DRAFT_KEY, JSON.stringify(d));
+    else sessionStorage.removeItem(DRAFT_KEY);
+  } catch {
+    /* 비공개 창 등 저장이 안 되면 그냥 넘어가요 */
+  }
+}
+
 export function EntrySheet() {
   const { S, today, entry, closeEntry, model, update, toast, setView } = useApp();
   // 고치는 중이면 원래 기록 (닫거나 저장하면 쓰던 새 기록 값으로 돌아가요)
   const [orig, setOrig] = useState<{ day: string; it: Item } | null>(null);
   const draft = useRef<Draft | null>(null);
-  const [amount, setAmount] = useState("");
-  const [memo, setMemo] = useState("");
+  // 적던 새 기록(금액·메모·분류·결제)은 창을 새로고침해도 남게 이 창에만 잠깐 보관해요 (기록·서버에는 안 들어가요)
+  const saved = useRef<Partial<Draft> | null>(readDraft());
+  const [amount, setAmount] = useState(saved.current?.amount || "");
+  const [memo, setMemo] = useState(saved.current?.memo || "");
   const [day, setDayK] = useState(entry.day);
-  const [cat, setCat] = useState("식비");
-  const [pay, setPay] = useState<Pay>("check");
+  const [cat, setCat] = useState(saved.current?.cat || "식비");
+  const [pay, setPay] = useState<Pay>(saved.current?.pay || "check");
   const [splitOn, setSplitOn] = useState(false);
   const [splitN, setSplitN] = useState("2");
   const [splitMine, setSplitMine] = useState("");
@@ -46,6 +66,18 @@ export function EntrySheet() {
   const [names, setNames] = useState<string[]>([]);
   const [attend, setAttend] = useState<boolean[][]>([]);
   const amtRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (orig) return; // 고치는 중엔 보관하지 않아요
+    writeDraft(amount || memo ? { amount, memo, cat, pay } : null);
+  }, [amount, memo, cat, pay, orig]);
+  // 삭제는 한 번 더 물어봐요
+  const [askDel, setAskDel] = useState(false);
+  // 금액 없이 기록하기를 누르면 이유를 알려줘요
+  const [amtErr, setAmtErr] = useState(false);
+  useEffect(() => {
+    setAskDel(false);
+    setAmtErr(false);
+  }, [entry.nonce, entry.open]);
 
   const snapshot = (): Draft => ({ amount, memo, cat, pay, splitOn, splitN, splitMine, splitMode, rounds, names, attend });
   const restore = (d: Draft | null) => {
@@ -115,15 +147,22 @@ export function EntrySheet() {
   const { cfg, cur, view } = model;
   const entryMin = orig && orig.day < (cfg.firstStart || cur.start) ? orig.day : cfg.firstStart || cur.start;
   const byRounds = splitOn && splitMode === "rounds";
-  const rs = splitRounds(rounds.map((r) => ({ amount: parse(r.amount), people: parseInt(r.people, 10) || 1 })));
+  const rs = splitRounds(rounds.map((r) => ({ amount: parse(r.amount), people: Math.min(20, Math.max(1, parseInt(r.people, 10) || 1)) })));
   // 차수별이면 위쪽 금액 = 차수 합계
   const n = byRounds ? rs.total : parse(amount);
-  const people = Math.max(2, parseInt(splitN, 10) || 2);
+  // 나눠 내는 사람은 나 포함 2~20명 (칸 밖의 숫자는 가까운 쪽으로 맞추고 알려줘요)
+  const peopleRaw = parseInt(splitN, 10);
+  const people = Math.min(20, Math.max(2, peopleRaw || 2));
+  const peopleOff = splitN.trim() !== "" && peopleRaw !== people;
   const shareNow = byRounds ? rs.mine : Math.min(n, parse(splitMine) || Math.round(n / people));
   const setRound = (i: number, patch: Partial<{ amount: string; people: string }>) => setRounds(rounds.map((r, k) => (k === i ? { ...r, ...patch } : r)));
 
   const addEntry = () => {
-    if (!n) return;
+    if (!n) {
+      setAmtErr(true);
+      amtRef.current?.focus();
+      return;
+    }
     const k = day, mine = splitOn ? shareNow : n;
     const o = orig?.it;
     const it: Item = { id: o ? o.id : uid6(), amount: n, memo: memo.trim(), cat, pay, t: o ? o.t : Date.now() };
@@ -206,6 +245,11 @@ export function EntrySheet() {
         <span aria-hidden="true">원</span>
       </div>
       {byRounds && <p className="hint">차수별 금액을 더한 총액이에요. 아래 차수 칸에서 바꿔요.</p>}
+      {amtErr && !n && (
+        <p className="hint err" role="alert">
+          {byRounds ? "차수별 금액을 넣어주세요." : "금액을 넣어주세요. 숫자만 들어가요 (소수점·마이너스는 빠져요)."}
+        </p>
+      )}
       <div className="chips" role="group" aria-label="금액 빠르게 더하기" hidden={byRounds}>
         <button className="chip" onClick={() => quick(1000)}>+1천</button>
         <button className="chip" onClick={() => quick(5000)}>+5천</button>
@@ -214,7 +258,9 @@ export function EntrySheet() {
       </div>
       <div className="row">
         <div className="field" style={{ flex: "2 1 160px" }}>
-          <label htmlFor="memo">메모</label>
+          <label htmlFor="memo">
+            메모{memo.length >= 30 && <span className="count">{" " + memo.length + "/40"}</span>}
+          </label>
           <input id="memo" maxLength={40} placeholder="예: 점심 김밥" autoComplete="off" value={memo} onChange={(e) => setMemo(e.target.value)} onKeyDown={onEnter} />
         </div>
         <div className="field" style={{ flex: "1 1 120px" }}>
@@ -273,7 +319,8 @@ export function EntrySheet() {
             <div className="row">
               <div className="field" style={{ flex: "1 1 100px" }}>
                 <label htmlFor="splitN">나 포함 몇 명</label>
-                <input id="splitN" type="number" min={2} max={20} inputMode="numeric" value={splitN} onChange={(e) => setSplitN(e.target.value)} />
+                <input id="splitN" type="number" min={2} max={20} inputMode="numeric" value={splitN} onChange={(e) => setSplitN(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))} />
+                {peopleOff && <p className="hint err">{"2~20명까지 나눌 수 있어요. " + people + "명으로 계산해요."}</p>}
               </div>
               <div className="field" style={{ flex: "2 1 140px" }}>
                 <label htmlFor="splitMine">내 몫 (비우면 N분의 1)</label>
@@ -342,16 +389,30 @@ export function EntrySheet() {
           )}
         </div>
       )}
-      <div className="cta-bar">
-        {orig && (
-          <button className="btn danger" onClick={remove}>
-            삭제
+      {orig && askDel ? (
+        <div className="cta-bar ask" role="alertdialog" aria-labelledby="delAsk">
+          <p className="cta-q" id="delAsk">
+            {(orig.it.memo || orig.it.cat || "이 기록") + " " + won(orig.it.amount) + " 기록을 지울까요? 지우면 되돌릴 수 없어요."}
+          </p>
+          <button className="btn gray" onClick={() => setAskDel(false)}>
+            취소
           </button>
-        )}
-        <button className="btn" disabled={!n} onClick={addEntry}>
-          {orig ? "저장" : "기록하기"}
-        </button>
-      </div>
+          <button className="btn danger-fill" onClick={remove}>
+            지우기
+          </button>
+        </div>
+      ) : (
+        <div className="cta-bar">
+          {orig && (
+            <button className="btn danger" onClick={() => setAskDel(true)}>
+              삭제
+            </button>
+          )}
+          <button className={"btn" + (n ? "" : " dim")} aria-disabled={!n} onClick={addEntry}>
+            {orig ? "저장" : "기록하기"}
+          </button>
+        </div>
+      )}
     </Sheet>
   );
 }

@@ -52,6 +52,8 @@ export function DaySheet() {
     const tSpent = trip ? tripSpent(S.days, trip) : 0;
     const ns = isNoSpend(S.days, d.key);
     const sub = dday(d.key, today);
+    // 기록 없는 오늘·지난 날은 무지출 표시를 ⋯ 안에 숨기지 않고 바로 보여줘요 (예비비 계산에 넣으려면 필요해서)
+    const nsInline = items.length === 0 && d.key <= today;
 
     return (
       <>
@@ -60,9 +62,11 @@ export function DaySheet() {
             <h2 id="dayTitle">{md(d.date) + " (" + DOW[d.wd] + ")"}</h2>
             <span className={"dc-sub" + (isAppt ? " appt" : trip ? " trip" : "")}>{sub}</span>
           </div>
-          <button className="x" aria-label="더보기" aria-expanded={more} onClick={() => setMore(!more)}>
-            ⋯
-          </button>
+          {!nsInline && (
+            <button className="x" aria-label="더보기" aria-expanded={more} onClick={() => setMore(!more)}>
+              ⋯
+            </button>
+          )}
           <button className="x" aria-label="닫기" onClick={closeDay}>
             ✕
           </button>
@@ -87,6 +91,15 @@ export function DaySheet() {
             </>
           )}
         </div>
+
+        {nsInline && (
+          <div className="dc-ns">
+            <button className={"btn line" + (ns ? " on" : "")} aria-pressed={ns} onClick={() => toggleNoSpend(d.key)}>
+              {ns ? "무지출로 표시했어요 · 취소" : "이날은 안 썼어요 (무지출로 표시)"}
+            </button>
+            {!ns && <p className="hint">기록이 없는 날은 예비비 계산에서 빠져요. 안 쓴 날이면 눌러 주세요.</p>}
+          </div>
+        )}
 
         {more && (
           <div className="dc-more">

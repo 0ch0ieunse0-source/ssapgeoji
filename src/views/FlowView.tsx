@@ -2,7 +2,7 @@ import { useState } from "react";
 import { BigWon, MoneyInput } from "../components/common";
 import { addDays, sd } from "../lib/date";
 import { computeFlow, type FlowItem } from "../lib/flow";
-import { parse, uid6, won } from "../lib/format";
+import { parse, parseSigned, uid6, won } from "../lib/format";
 import { daysFor, planFor, preZero } from "../lib/period";
 import type { FlowOver } from "../lib/types";
 import { useApp, useModel } from "../state/app";
@@ -30,6 +30,8 @@ function FlowAmount({ it, onCommit }: { it: FlowItem; onCommit: (n: number) => v
 
 export function FlowView() {
   const { S, today, update, toast, go } = useApp();
+  // 삭제는 한 번 더 물어봐요
+  const [askDel, setAskDel] = useState<string | null>(null);
   const { cfg, cur } = useModel();
   const [fDate, setFDate] = useState(today);
   const [fLabel, setFLabel] = useState("");
@@ -64,7 +66,7 @@ export function FlowView() {
     const n = rBal.trim();
     if (!n) return toast("오늘 통장 잔액을 적어주세요.", true);
     update((d) => {
-      d.settings!.balance = parse(n);
+      d.settings!.balance = parseSigned(n);
       d.settings!.balanceDate = today;
     });
     setRBal("");
@@ -109,7 +111,7 @@ export function FlowView() {
         <div className="row">
           <div className="field" style={{ flex: "2 1 150px" }}>
             <label htmlFor="rBal">오늘 통장 잔액</label>
-            <MoneyInput id="rBal" value={rBal} onValue={setRBal} placeholder="0" />
+            <MoneyInput id="rBal" value={rBal} onValue={setRBal} placeholder="0" signed />
           </div>
           <button className="btn soft" style={{ flex: "1 1 100px" }} onClick={rematch}>
             맞추기
@@ -148,14 +150,28 @@ export function FlowView() {
                   {ST_LABEL[it.status]}
                 </button>
                 <FlowAmount key={it.id + ":" + it.amount} it={it} onCommit={(n) => patchFlow(it, { amount: n })} />
-                {!it.auto && (
-                  <button
-                    className="del"
-                    aria-label={it.label + " 일정 삭제"}
-                    onClick={() => update((d) => void (d.flows.custom = d.flows.custom.filter((x) => x.id !== it.id)))}
-                  >
+                {!it.auto && askDel !== it.id && (
+                  <button className="del" aria-label={it.label + " 일정 삭제"} onClick={() => setAskDel(it.id)}>
                     삭제
                   </button>
+                )}
+                {!it.auto && askDel === it.id && (
+                  <span className="del-ask" role="group" aria-label={it.label + " 일정을 지울까요?"}>
+                    <span>지울까요?</span>
+                    <button className="del" onClick={() => setAskDel(null)}>
+                      취소
+                    </button>
+                    <button
+                      className="del on"
+                      onClick={() => {
+                        update((d) => void (d.flows.custom = d.flows.custom.filter((x) => x.id !== it.id)));
+                        setAskDel(null);
+                        toast("'" + it.label + "' 일정을 지웠어요.");
+                      }}
+                    >
+                      지우기
+                    </button>
+                  </span>
                 )}
               </div>
             </li>

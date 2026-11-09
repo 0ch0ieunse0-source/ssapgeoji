@@ -143,7 +143,7 @@ export function Onboarding() {
           </span>
           {!last && (
             <button className="link" onClick={() => setI(SLIDES.length)}>
-              건너뛰기
+              설치 방법 보기
             </button>
           )}
         </div>

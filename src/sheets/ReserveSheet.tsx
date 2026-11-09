@@ -99,7 +99,7 @@ export function ReserveSheet({ open, onClose }: { open: boolean; onClose: () => 
         <b>예비비는 이렇게 써요</b>
         <span>· 약속이 생기거나 급한 날, 달력에서 날짜를 눌러 한도를 올리면 예비비에서 빠져요.</span>
         <span>· 넉넉하면 아끼기 탭에서 저축통장으로 옮기거나 목표에 보태요.</span>
-        <span>· 기록 안 한 날은 계산에서 빠져요. 안 쓴 날은 '오늘은 안 썼어요'를 눌러 주세요.</span>
+        <span>· 기록 안 한 날은 계산에서 빠져요. 안 쓴 날은 홈의 '오늘은 안 썼어요'나, 달력에서 그날을 눌러 '이날은 안 썼어요'를 눌러 주세요.</span>
       </div>
 
       <div className="cta-bar">

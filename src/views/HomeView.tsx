@@ -287,6 +287,15 @@ export function HomeView() {
     ),
   };
 
+  // 달 중간에 시작했으면 시작 전 날짜 몫을 뺀 이유를 알려줘요 (넣은 생활비와 홈 금액이 달라 보여서)
+  const preDays = days.filter((d) => d.pre);
+  const preCut = preDays.reduce((s, d) => s + (d.preBase || 0), 0);
+  const preNote =
+    preCut > 0 && preDays.length
+      ? (cfg.joinDate ? sd(cfg.joinDate) + "에 시작해서 " : "") +
+        (preDays.length > 1 ? sd(preDays[0].key) + "~" + sd(preDays[preDays.length - 1].key) : sd(preDays[0].key)) +
+        " 몫 " + won(preCut) + "은 뺐어요 (넣은 생활비 " + won(total + preCut) + ")"
+      : null;
   return (
     <div className="view home2">
       {!cfg.total && (
@@ -324,6 +333,7 @@ export function HomeView() {
       <section className="hero" aria-label="생활비 요약">
         <div>
           <div className="eyebrow">{(isCur ? "이번 달" : sd(view.start) + "~" + sd(view.end)) + " 생활비 " + man(total) + "원 중 남은 돈"}</div>
+          {preNote && <div className="hero-note">{preNote}</div>}
           <div className={"big" + (left < 0 ? " minus" : "")}>
             <BigWon n={left} />
           </div>

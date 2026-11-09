@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from "react";
+import { lockTaps } from "../lib/tapLock";
 
 /**
  * 바텀시트. 열 때 시트 안으로 포커스를 옮기고, 닫으면 원래 자리로 돌려요.
@@ -22,6 +23,13 @@ export function Sheet({
 }) {
   const ref = useRef<HTMLElement>(null);
   const lastFocus = useRef<HTMLElement | null>(null);
+
+  // 닫힌 직후 두 번째 탭이 아래 탭바로 새지 않게 잠깐 막아요
+  const wasOpen = useRef(open);
+  useEffect(() => {
+    if (wasOpen.current && !open) lockTaps();
+    wasOpen.current = open;
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;

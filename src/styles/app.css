@@ -982,3 +982,39 @@ body.page-plain .acct-done i { box-shadow: 0 0 0 4px var(--surface); }
 .ev-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .ev-btn .a { flex-direction: row; align-items: center; gap: 6px; }
 .ev-btn .chev { color: var(--muted); font-size: 18px; line-height: 1; }
+.banner-link { background: none; border: none; padding: 0; font: inherit; color: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
+/* 저장 직후 두 번째 탭이 아래 탭바로 새지 않게 (lib/tapLock.ts) */
+.tap-lock .app, .tap-lock .app *, .tap-lock .dock, .tap-lock .dock * { pointer-events: none !important; }
+/* 지우기 전 확인 (쓴 돈 고치기 · 돈 일정) */
+.cta-bar.ask { flex-wrap: wrap; }
+.cta-q { flex: 1 1 100%; margin: 0 0 2px; font-size: 14.5px; font-weight: 600; color: var(--ink); line-height: 1.45; }
+.btn.danger-fill { background: var(--over); color: #fff; }
+.cta-bar > .btn.danger-fill { flex: 2 1 0; }
+.flow .tools .del { min-width: 48px; padding: 0 12px; border-radius: 10px; }
+.flow .tools .del.on { color: var(--over); font-weight: 700; background: var(--surface-2); }
+.del-ask { display: inline-flex; align-items: center; gap: 2px; font-size: 13px; color: var(--ink); font-weight: 600; }
+/* 글자 버튼은 보이는 크기는 그대로, 누르는 영역만 넓혀요 (손가락 44px 기준) */
+button.link { position: relative; }
+button.link::after { content: ""; position: absolute; inset: -8px -8px; }
+/* 좁은 화면에서 잘리던 보조 설명은 두 줄까지 보여줘요 (나눠 낸 기록의 받을 돈, 로그인 안내) */
+.tx .t span { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.4; }
+.ad-main > span:nth-child(2) > span { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.sign-toggle { display: block; margin-top: 8px; font-size: 12.5px; }
+.hero-note { font-size: 12.5px; opacity: 0.85; margin-top: 2px; line-height: 1.4; }
+.dc-ns { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+.dc-ns .btn { width: 100%; }
+.dc-ns .btn.on { color: var(--accent); border-color: var(--accent); }
+.dc-ns .hint { margin: 0; }
+.toast.top { bottom: auto; top: calc(16px + env(safe-area-inset-top, 0px)); }
+.btn.dim { opacity: .4; }
+.hint.err { color: var(--over); }
+label .count { color: var(--muted); font-weight: 500; }
+/* 내려 볼 때 '쓴 돈 적기'를 + 버튼으로 줄여요 */
+.fab .fab-t { display: inline-block; max-width: 120px; overflow: hidden; white-space: nowrap; transition: max-width .2s ease, opacity .2s ease; }
+.fab.mini { padding: 14px; gap: 0; }
+.fab.mini .fab-t { max-width: 0; opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .fab .fab-t { transition: none; } }
+.banner { position: relative; }
+.banner.has-x { padding-right: 40px; }
+.banner .banner-x { position: absolute; top: 4px; right: 4px; width: 36px; height: 36px; background: none; border: none; color: inherit; font-size: 15px; cursor: pointer; }
+.cta-bar.ask { background: var(--surface); border-top: 1px solid var(--line); padding-top: 14px; }

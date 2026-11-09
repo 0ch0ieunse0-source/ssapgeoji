@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { addDays, dateFor, dOf, kOf, sd } from "./date";
-import { parse, won, short, man } from "./format";
+import { fmtSigned, MAX_WON, parse, parseSigned, won, short, man } from "./format";
 
 describe("날짜 도구", () => {
   it("kOf / dOf는 서로 되돌려요", () => {
@@ -42,5 +42,24 @@ describe("조사", () => {
   it("받침에 맞게 을/를", async () => {
     const { eulReul } = await import("./format");
     expect([eulReul("대구"), eulReul("부산 여행"), eulReul("제주")]).toEqual(["대구를", "부산 여행을", "제주를"]);
+  });
+});
+
+describe("금액 칸 숫자 처리", () => {
+  it("소수점 뒤는 버려요 (숫자가 붙지 않게)", () => {
+    expect(parse("3500.50")).toBe(3500);
+    expect(parse("3,500.")).toBe(3500);
+    expect(parse("1.5")).toBe(1);
+  });
+  it("1조 원 미만(12자리)까지만", () => {
+    expect(parse("9".repeat(25))).toBe(999_999_999_999);
+    expect(parse("9".repeat(25))).toBeLessThanOrEqual(MAX_WON);
+  });
+  it("잔액 칸은 마이너스도 받아요", () => {
+    expect(parseSigned("-50,000")).toBe(-50000);
+    expect(parseSigned("50,000")).toBe(50000);
+    expect(fmtSigned("-")).toBe("-");
+    expect(fmtSigned("-50000")).toBe("-50,000");
+    expect(fmtSigned("12000")).toBe("12,000");
   });
 });

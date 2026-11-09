@@ -1,6 +1,6 @@
 import { forwardRef, type InputHTMLAttributes, type KeyboardEvent, type MouseEvent } from "react";
 import { catVar } from "../lib/cats";
-import { fmt, parse, won } from "../lib/format";
+import { fmt, fmtSigned, parse, won } from "../lib/format";
 import { catsLabel, mineOf } from "../lib/ledger";
 import { roundsLabel } from "../lib/split";
 import type { Item } from "../lib/types";
@@ -54,9 +54,36 @@ export function SmallIco({ text, bg, fg }: { text: string; bg: string; fg: strin
 }
 
 /** 금액 입력칸: 쓰는 동안 1,000 단위 쉼표를 넣어요 */
-type MoneyProps = { value: string; onValue: (v: string) => void } & Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange">;
-export const MoneyInput = forwardRef<HTMLInputElement, MoneyProps>(function MoneyInput({ value, onValue, className = "money", ...rest }, ref) {
-  return <input ref={ref} className={className} inputMode="numeric" value={value} onChange={(e) => onValue(fmt(parse(e.target.value)))} {...rest} />;
+type MoneyProps = { value: string; onValue: (v: string) => void; /** 마이너스 허용 (통장 잔액) */ signed?: boolean } & Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange">;
+// 소수점을 치면 정수 부분 뒤에 "."을 잠깐 남겨 뒤에 친 숫자가 앞 숫자에 붙지 않게 해요 (3500.50 → 3,500). 칸을 벗어나면 지워요.
+const keepDot = (raw: string, shown: string) => (raw.includes(".") && shown && shown !== "-" ? shown + "." : shown);
+export const MoneyInput = forwardRef<HTMLInputElement, MoneyProps>(function MoneyInput({ value, onValue, className = "money", signed, onBlur, ...rest }, ref) {
+  // 숫자만 받아요. 소수점 뒤는 버리고, 1조 원 미만(12자리)까지. 마이너스는 잔액 칸에서만.
+  const input = (
+    <input
+      ref={ref}
+      className={className}
+      inputMode="numeric"
+      value={value}
+      onChange={(e) => onValue(keepDot(e.target.value, signed ? fmtSigned(e.target.value) : fmt(parse(e.target.value))))}
+      onBlur={(e) => {
+        if (value.endsWith(".")) onValue(value.slice(0, -1));
+        onBlur?.(e);
+      }}
+      {...rest}
+    />
+  );
+  if (!signed) return input;
+  // 휴대폰 숫자 키패드엔 '-'가 없어서, 마이너스 통장은 버튼으로 바꿔요
+  const neg = /^\s*-/.test(value);
+  return (
+    <>
+      {input}
+      <button type="button" className="link sign-toggle" onClick={() => onValue(neg ? value.replace(/^\s*-/, "") : "-" + value)}>
+        {neg ? "마이너스 빼기" : "마이너스 잔액이에요 (−)"}
+      </button>
+    </>
+  );
 });
 
 /** 금액 + 음수면 빨간색 (프로토타입 setV) */

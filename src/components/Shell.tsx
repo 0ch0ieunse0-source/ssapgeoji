@@ -1,3 +1,4 @@
+import { useEffect, useLayoutEffect, useState } from "react";
 import { sd } from "../lib/date";
 import { IS_PREVIEW } from "../lib/storage";
 import { currentUnread } from "../notices";
@@ -74,11 +75,24 @@ const lastBank = (): ViewName => {
 };
 
 export function Banner() {
-  const { storageOk } = useApp();
+  const { storageOk, broken, dismissBroken, go, S } = useApp();
   if (IS_PREVIEW)
     return (
       <div className="banner preview-banner" role="note">
         디자인 테스트 버전이에요. 처음 열 때 기록을 복사해 왔고, 여기서 바꾼 건 진짜 앱에 반영되지 않아요.
+      </div>
+    );
+  if (broken)
+    return (
+      <div className="banner has-x" role="alert">
+        저장된 기록을 읽지 못했어요. 원본은 이 기기에 따로 보관해 뒀어요. 백업 파일이 있으면{" "}
+        <button className="banner-link" onClick={() => go(S.settings ? "setup/data" : "setup")}>
+          백업 불러오기
+        </button>
+        로 되살릴 수 있어요.
+        <button className="banner-x" aria-label="안내 닫기" onClick={dismissBroken}>
+          ✕
+        </button>
       </div>
     );
   if (storageOk) return null;
@@ -129,12 +143,26 @@ const TABS: { v: ViewName; label: string; icon: JSX.Element; also: ViewName[] }[
 
 export function Dock() {
   const { route, go, openEntry } = useApp();
+  // 아래로 내리며 볼 때는 '쓴 돈 적기'를 동그란 + 버튼으로 줄여서 목록 금액을 덜 가려요
+  const [mini, setMini] = useState(false);
+  useEffect(() => {
+    let last = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      if (Math.abs(y - last) < 8) return;
+      setMini(y > 80 && y > last);
+      last = y;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
   return (
     <div className="dock">
       <div className="dock-in">
         {(route === "home" || route === "ledger") && (
-          <button className="fab" aria-label="쓴 돈 적기" onClick={() => openEntry()}>
-            {Icon.plus}쓴 돈 적기
+          <button className={"fab" + (mini ? " mini" : "")} aria-label="쓴 돈 적기" onClick={() => openEntry()}>
+            {Icon.plus}
+            <span className="fab-t">쓴 돈 적기</span>
           </button>
         )}
         <nav className="tabbar" role="tablist" aria-label="메뉴">
@@ -158,8 +186,12 @@ export function Dock() {
 
 export function Toast() {
   const { toastState } = useApp();
+  // 시트가 열려 있으면 내용·버튼을 가리지 않게 화면 위쪽에 띄워요
+  // (시트가 닫히면서 같이 띄운 알림도 있어서, 화면이 바뀐 뒤에 확인해요)
+  const [top, setTop] = useState(false);
+  useLayoutEffect(() => setTop(!!toastState && !!document.querySelector(".scrim:not([hidden])")), [toastState]);
   return (
-    <div className={"toast" + (toastState?.err ? " err" : "")} role="status" aria-live="polite" hidden={!toastState}>
+    <div className={"toast" + (toastState?.err ? " err" : "") + (top ? " top" : "")} role="status" aria-live="polite" hidden={!toastState}>
       {toastState?.text}
     </div>
   );
