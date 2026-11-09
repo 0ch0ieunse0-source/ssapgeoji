@@ -6,6 +6,8 @@ import { kOf, startOfToday } from "../lib/date";
 import { getDay, setDay } from "../lib/ledger";
 import { budgetOf, daysFor, makePlan, periodOf, planFor, preZero, resplitPlans, shiftPeriod, weeksOf, type DayInfo } from "../lib/period";
 import { livingMap } from "../lib/trip";
+import { applyFlex, leftoverOf, type FlexInfo } from "../lib/flex";
+import { movedIn } from "../lib/savings";
 import { cloneData, loadData, saveData } from "../lib/storage";
 import { onAppError, reportError } from "../lib/errors";
 import { merge3 } from "../lib/merge";
@@ -30,6 +32,8 @@ export interface Model {
   L: DaysMap;
   /** 그 달 생활비 ('0으로 처리'한 처음 쓰기 전 날의 한도만큼 빠져요) */
   budget: number;
+  /** 예비비와 '남은 날에 나눠 쓰기' 계산 (days의 한도에 이미 들어 있어요) */
+  flex: FlexInfo;
 }
 
 export interface EntryPreset {
@@ -41,6 +45,8 @@ interface EntryState {
   open: boolean;
   day: Key;
   pre?: EntryPreset;
+  /** 이미 적은 기록을 고칠 때: 그 기록의 날짜와 id */
+  edit?: { day: Key; id: string };
   nonce: number;
 }
 
@@ -76,6 +82,8 @@ interface AppValue {
   toastState: { text: string; err: boolean; n: number } | null;
   entry: EntryState;
   openEntry: (k?: Key, pre?: EntryPreset) => void;
+  /** 적은 기록 고치기 (쓴 돈 적기 화면이 다 채워진 채로 열려요) */
+  editEntry: (k: Key, id: string) => void;
   closeEntry: () => void;
   dayKey: Key | null;
   openDay: (k: Key) => void;
@@ -318,8 +326,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     let view = viewP;
     if (!view || view.start > shiftPeriod(cur, 1, cd).start) view = cur;
     const plan = planFor(S.periods, cfg, view);
-    const days = daysFor(view, plan, cfg.appts, cfg.trips, preZero(cfg, S.days));
+    const plain = daysFor(view, plan, cfg.appts, cfg.trips, preZero(cfg, S.days));
     const isCur = view.start === cur.start;
+    const L = livingMap(S.days, cfg.trips);
+    const budget = budgetOf(plan, plain);
+    const { days, info: flex } = applyFlex(plain, L, today, { mode: leftoverOf(cfg), budget, moved: movedIn(S.savings.moves, view, cd), isCur });
     return {
       cfg,
       cur,
@@ -330,8 +341,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       isCur,
       refKey: isCur ? today : view.end < today ? view.end : view.start,
       dayByKey: (k: Key) => days.find((d) => d.key === k),
-      L: livingMap(S.days, cfg.trips),
-      budget: budgetOf(plan, days),
+      L,
+      budget,
+      flex,
     };
   }, [S, viewP, today]);
 
@@ -382,6 +394,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     },
     [model],
   );
+  const editEntry = useCallback((k: Key, id: string) => setEntry((e) => ({ open: true, day: k, edit: { day: k, id }, nonce: e.nonce + 1 })), []);
   const closeEntry = useCallback(() => setEntry((e) => ({ ...e, open: false })), []);
   const openDay = useCallback((k: Key) => setDayKey(k), []);
   const [appt, setAppt] = useState<ApptTarget>(null);
@@ -418,7 +431,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setViewP(p);
     },
     shiftView, slideDir, appt, openAppt: setAppt,
-    entry, openEntry, closeEntry, dayKey, openDay, closeDay, toggleNoSpend,
+    entry, openEntry, editEntry, closeEntry, dayKey, openDay, closeDay, toggleNoSpend,
     formNonce, bumpForm: () => setFormNonce((n) => n + 1),
     guide, openGuide, closeGuide, markGuideSeen,
   };

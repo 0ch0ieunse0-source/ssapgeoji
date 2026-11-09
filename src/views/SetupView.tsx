@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { leftoverOf, type Leftover } from "../lib/flex";
 import { MoneyInput, SmallIco } from "../components/common";
 import { dOf, DOW, md, sd } from "../lib/date";
 import { fmt, man, parse, uid6, won } from "../lib/format";
@@ -42,6 +43,7 @@ export function SetupView({ section = "" }: { section?: string }) {
   const [tBudget, setTBudget] = useState("");
   const [tFund, setTFund] = useState<TripFund>("living");
   const [auto, setAuto] = useState(c.autoLimits !== false);
+  const [leftover, setLeftover] = useState<Leftover>(leftoverOf(c));
   const [weekday, setWeekday] = useState(fmt(c.weekday));
   const [weekend, setWeekend] = useState(fmt(c.weekend));
   const [balance, setBalance] = useState(fmt(c.balance));
@@ -161,6 +163,7 @@ export function SetupView({ section = "" }: { section?: string }) {
           accent,
           joinDate: today,
           preStart: all ? "zero" : preStart,
+          ...(all ? {} : { leftover }),
         };
         d.periods = {};
       });
@@ -184,7 +187,9 @@ export function SetupView({ section = "" }: { section?: string }) {
     const curStart = periodOf(today, cycle).start;
     const oldAppts = prev ? (prev.appts || []).filter((k) => k < curStart) : [];
     update((d) => {
+      // 이 화면에 없는 설정(홈 편집·남은 돈 등)은 그대로 두고 고친 칸만 바꿔요
       d.settings = {
+        ...(prev || {}),
         name: name.trim(),
         cycleDay: cycle,
         total: totalN,
@@ -210,6 +215,7 @@ export function SetupView({ section = "" }: { section?: string }) {
         accent,
         joinDate: prev?.joinDate || today,
         preStart,
+        leftover,
       };
       // 이번 달부터는 새 설정으로 다시 나누기 (지난 달 계획은 그대로)
       Object.keys(d.periods).forEach((k) => {
@@ -456,6 +462,22 @@ export function SetupView({ section = "" }: { section?: string }) {
           </span>
           {auto && <span className="k">달마다 날짜 수가 달라서 한도는 매달 새로 나눠요.</span>}
         </div>
+        <div className="lbl" id="cLeftLbl">
+          덜 쓴 돈은
+        </div>
+        <div className="seg" role="group" aria-labelledby="cLeftLbl">
+          <button aria-pressed={leftover === "spread"} onClick={() => setLeftover("spread")}>
+            남은 날에 나눠 쓰기
+          </button>
+          <button aria-pressed={leftover === "reserve"} onClick={() => setLeftover("reserve")}>
+            예비비에 모으기
+          </button>
+        </div>
+        <p className="hint">
+          {leftover === "spread"
+            ? "한도보다 덜 쓰면 그만큼 남은 날 한도가 조금씩 늘고, 더 쓰면 조금씩 줄어요."
+            : "하루 한도는 그대로예요. 덜 쓴 돈은 예비비에 모이고, 한도를 올리거나 저축할 때 써요."}
+        </p>
       </section>
   );
   const s4 = (
@@ -580,16 +602,23 @@ export function SetupView({ section = "" }: { section?: string }) {
           </button>
         </section>
   );
+  // 저장 버튼은 화면 아래에 늘 붙어 있어요 (긴 화면에서도 보이게)
+  const errLine = err && (
+    <p className="hint" style={{ color: "var(--over)" }} role="alert">
+      {err}
+    </p>
+  );
   const saveArea = (
     <>
-      <button className="btn" onClick={() => saveSettings()}>
-        {cfg ? "설정 저장" : "저장하고 시작하기"}
-      </button>
-      {err && (
-        <p className="hint" style={{ color: "var(--over)" }} role="alert">
-          {err}
-        </p>
-      )}
+      <div className="cta-space" aria-hidden="true" />
+      <div className="cta-fixed">
+        {errLine}
+        <div className="cta-fixed-in">
+          <button className="btn" onClick={() => saveSettings()}>
+            {cfg ? "설정 저장" : "저장하고 시작하기"}
+          </button>
+        </div>
+      </div>
     </>
   );
 
@@ -644,9 +673,14 @@ export function SetupView({ section = "" }: { section?: string }) {
             {s1}
             {s3}
             <p className="hint">약속·여행은 시작한 뒤 가계부 달력에서 날짜를 눌러 추가해요.</p>
-            <button className="btn" onClick={goStep2}>
-              다음
-            </button>
+            <div className="cta-fixed">
+              {errLine}
+              <div className="cta-fixed-in">
+                <button className="btn" onClick={goStep2}>
+                  다음
+                </button>
+              </div>
+            </div>
           </>
         ) : (
           <>
@@ -654,27 +688,25 @@ export function SetupView({ section = "" }: { section?: string }) {
             {s5}
             {s6}
             {s7}
-            <div className="onb-actions two">
-              <button
-                className="btn line"
-                onClick={() => {
-                  setErr(null);
-                  setFstep(1);
-                  window.scrollTo(0, 0);
-                }}
-              >
-                이전
-              </button>
-              <button className="btn" onClick={() => saveSettings()}>
-                시작하기
-              </button>
+            <div className="cta-fixed">
+              {errLine}
+              <div className="cta-fixed-in">
+                <button
+                  className="btn line"
+                  onClick={() => {
+                    setErr(null);
+                    setFstep(1);
+                    window.scrollTo(0, 0);
+                  }}
+                >
+                  이전
+                </button>
+                <button className="btn" onClick={() => saveSettings()}>
+                  시작하기
+                </button>
+              </div>
             </div>
           </>
-        )}
-        {err && (
-          <p className="hint" style={{ color: "var(--over)" }} role="alert">
-            {err}
-          </p>
         )}
         <button className="btn line" onClick={() => saveSettings(fstep === 1 ? "all" : "optional")}>
           나중에 입력하기

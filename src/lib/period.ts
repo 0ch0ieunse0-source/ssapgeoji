@@ -81,6 +81,7 @@ export interface DayInfo {
   trip?: Trip; // 여행 날이면 그 여행
   pre?: boolean; // '0으로 처리'한 처음 쓰기 전 날 (한도 0)
   preBase?: number; // 그날 원래 한도 (그 달 생활비에서 빼는 금액)
+  flex?: number; // '남은 날에 나눠 쓰기'로 더해진(빠진) 금액. base에 이미 들어 있어요
 }
 
 export function daysFor(p: Period, plan: Plan, appts: Key[] | undefined, trips?: Trip[], isPre?: (k: Key) => boolean): DayInfo[] {

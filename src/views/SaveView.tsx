@@ -9,7 +9,7 @@ import { useApp, useModel } from "../state/app";
 
 export function SaveView() {
   const { S, today, update, toast, openEntry } = useApp();
-  const { cfg, days, view, L } = useModel();
+  const { cfg, days, view, L, flex } = useModel();
   const D = L; // 생활비 계산용
   const cd = cfg.cycleDay;
   const sdays = savedDays(D, days, today);
@@ -85,7 +85,10 @@ export function SaveView() {
             <span className="v">{won(moved)}</span>
           </div>
         </div>
-        <p className="hint">기록을 남긴 지난날 중 한도보다 덜 쓴 만큼이에요. 기록하지 않은 날은 넣지 않아요. 옮긴 돈은 생활비에서 빠져요.</p>
+        <p className="hint">
+          기록을 남긴 지난날 중 한도보다 덜 쓴 만큼이에요. 기록하지 않은 날은 넣지 않아요. 옮긴 돈은 생활비에서 빠져요.
+          {flex.mode === "spread" && flex.given > 0 ? " 지금은 '남은 날에 나눠 쓰기' 중이라, 옮기면 남은 날 한도가 그만큼 줄어요." : ""}
+        </p>
         <div className="row">
           <div className="field" style={{ flex: "1 1 150px" }}>
             <label htmlFor="moveAmt">저축통장으로 옮긴 금액</label>

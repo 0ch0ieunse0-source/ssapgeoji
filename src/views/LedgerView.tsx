@@ -7,7 +7,7 @@ import { tripSpent } from "../lib/trip";
 import { useApp, useModel } from "../state/app";
 
 export function LedgerView() {
-  const { S, today, openDay, openAppt, shiftView, slideDir } = useApp();
+  const { S, today, openDay, editEntry, openAppt, shiftView, slideDir } = useApp();
   // 밀어서 달 넘기기 · 길게 눌러 약속 추가
   const touch = useRef<{ x: number; y: number; t: number; key: string | null; timer: number } | null>(null);
   const suppress = useRef(false);
@@ -187,7 +187,7 @@ export function LedgerView() {
               </div>
               <ul className="tx">
                 {getDay(R, d.key).items.map((it) => (
-                  <TxRow key={it.id} it={it} onClick={() => openDay(d.key)} />
+                  <TxRow key={it.id} it={it} onClick={() => editEntry(d.key, it.id)} />
                 ))}
               </ul>
             </Fragment>

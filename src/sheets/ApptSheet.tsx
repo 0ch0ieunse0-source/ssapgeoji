@@ -134,14 +134,16 @@ export function ApptSheet({ target, onClose }: { target: ApptTarget; onClose: ()
             <input id="apName" maxLength={14} placeholder="예: 민지 생일" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && saveAppt()} />
           </div>
           <p className="hint">{"이날 한도는 약속 날 한도 " + won(plan.apptLimit) + "이 돼요."}</p>
-          <button className="btn" onClick={saveAppt}>
-            {target.mode === "new" ? "추가" : "저장"}
-          </button>
-          {target.mode === "appt" && (
-            <button className="btn line" style={{ color: "var(--over)" }} onClick={removeAppt}>
-              약속 취소
+          <div className="cta-bar">
+            {target.mode === "appt" && (
+              <button className="btn danger" onClick={removeAppt}>
+                약속 취소
+              </button>
+            )}
+            <button className="btn" onClick={saveAppt}>
+              {target.mode === "new" ? "추가" : "저장"}
             </button>
-          )}
+          </div>
         </>
       ) : (
         <>
@@ -175,14 +177,16 @@ export function ApptSheet({ target, onClose }: { target: ApptTarget; onClose: ()
             </button>
           </div>
           <p className="hint">{fund === "living" ? "여행 예산만큼 그 달 다른 날 한도가 줄어요." : "생활비와 따로 계산해요. 다른 날 한도는 그대로예요."}</p>
-          <button className="btn" onClick={saveTrip}>
-            {target.trip ? "저장" : "여행 추가"}
-          </button>
           {target.trip && (
             <button className="btn line" style={{ color: "var(--over)" }} onClick={removeTrip} aria-live="polite">
               {delArmed ? "한 번 더 누르면 여행이 지워져요" : "여행 삭제"}
             </button>
           )}
+          <div className="cta-bar">
+            <button className="btn" onClick={saveTrip}>
+              {target.trip ? "저장" : "여행 추가"}
+            </button>
+          </div>
         </>
       )}
     </Sheet>

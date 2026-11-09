@@ -12,9 +12,26 @@ import { SettlePanel } from "../components/SettlePanel";
 import type { Item, Pay } from "../lib/types";
 import { useApp } from "../state/app";
 
-/** 쓴 돈 적기. 닫아도 쓰던 값과 고른 분류·결제수단은 남아요 (프로토타입과 같아요). */
+type Draft = {
+  amount: string;
+  memo: string;
+  cat: string;
+  pay: Pay;
+  splitOn: boolean;
+  splitN: string;
+  splitMine: string;
+  splitMode: "once" | "rounds";
+  rounds: { amount: string; people: string }[];
+  names: string[];
+  attend: boolean[][];
+};
+
+/** 쓴 돈 적기·고치기. 닫아도 쓰던 값과 고른 분류·결제수단은 남아요 (고치기는 닫으면 원래대로). */
 export function EntrySheet() {
   const { S, today, entry, closeEntry, model, update, toast, setView } = useApp();
+  // 고치는 중이면 원래 기록 (닫거나 저장하면 쓰던 새 기록 값으로 돌아가요)
+  const [orig, setOrig] = useState<{ day: string; it: Item } | null>(null);
+  const draft = useRef<Draft | null>(null);
   const [amount, setAmount] = useState("");
   const [memo, setMemo] = useState("");
   const [day, setDayK] = useState(entry.day);
@@ -30,8 +47,59 @@ export function EntrySheet() {
   const [attend, setAttend] = useState<boolean[][]>([]);
   const amtRef = useRef<HTMLInputElement>(null);
 
+  const snapshot = (): Draft => ({ amount, memo, cat, pay, splitOn, splitN, splitMine, splitMode, rounds, names, attend });
+  const restore = (d: Draft | null) => {
+    setAmount(d?.amount ?? "");
+    setMemo(d?.memo ?? "");
+    setCat(d?.cat ?? "식비");
+    setPay(d?.pay ?? "check");
+    setSplitOn(d?.splitOn ?? false);
+    setSplitN(d?.splitN ?? "2");
+    setSplitMine(d?.splitMine ?? "");
+    setSplitMode(d?.splitMode ?? "once");
+    setRounds(d?.rounds ?? blankRounds());
+    setNames(d?.names ?? []);
+    setAttend(d?.attend ?? []);
+  };
+  const endEdit = () => {
+    if (!orig) return;
+    setOrig(null);
+    restore(draft.current);
+    draft.current = null;
+  };
+  const close = () => {
+    closeEntry();
+    endEdit();
+  };
+
   useEffect(() => {
     if (!entry.nonce) return;
+    const ed = entry.edit;
+    if (ed) {
+      const it = getDay(S.days, ed.day).items.find((x) => x.id === ed.id);
+      if (!it) {
+        closeEntry();
+        return;
+      }
+      if (!orig) draft.current = snapshot();
+      setOrig({ day: ed.day, it });
+      setDayK(ed.day);
+      setAmount(fmt(it.amount));
+      setMemo(it.memo || "");
+      setCat(it.cat || "기타");
+      setPay(it.pay || "check");
+      const split = typeof it.mine === "number" && it.amount > it.mine;
+      const byR = !!(it.rounds && it.rounds.length > 1);
+      setSplitOn(split);
+      setSplitMode(byR ? "rounds" : "once");
+      setRounds(byR ? it.rounds!.map((r) => ({ amount: fmt(r.amount), people: String(r.people) })) : blankRounds());
+      setSplitN(String(it.settle?.people ?? 2));
+      setSplitMine(split && !byR ? fmt(it.mine!) : "");
+      setNames(it.settle?.names ? it.settle.names.slice() : []);
+      setAttend(it.settle?.attend ? it.settle.attend.map((r) => r.slice()) : []);
+      return;
+    }
+    endEdit();
     setDayK(entry.day);
     const pre = entry.pre;
     if (pre) {
@@ -45,7 +113,7 @@ export function EntrySheet() {
 
   if (!model) return null;
   const { cfg, cur, view } = model;
-  const entryMin = cfg.firstStart || cur.start;
+  const entryMin = orig && orig.day < (cfg.firstStart || cur.start) ? orig.day : cfg.firstStart || cur.start;
   const byRounds = splitOn && splitMode === "rounds";
   const rs = splitRounds(rounds.map((r) => ({ amount: parse(r.amount), people: parseInt(r.people, 10) || 1 })));
   // 차수별이면 위쪽 금액 = 차수 합계
@@ -57,13 +125,35 @@ export function EntrySheet() {
   const addEntry = () => {
     if (!n) return;
     const k = day, mine = splitOn ? shareNow : n;
-    const it: Item = { id: uid6(), amount: n, memo: memo.trim(), cat, pay, t: Date.now() };
+    const o = orig?.it;
+    const it: Item = { id: o ? o.id : uid6(), amount: n, memo: memo.trim(), cat, pay, t: o ? o.t : Date.now() };
     if (splitOn) {
       it.mine = mine;
-      it.received = false;
+      it.received = o && typeof o.mine === "number" ? !!o.received : false;
+      if (it.received && o?.receivedOn) it.receivedOn = o.receivedOn;
       if (byRounds && rs.valid.length > 1) it.rounds = rs.valid;
       const nm = names.map((x) => x.trim()).filter(Boolean);
       it.settle = { people: byRounds ? undefined : people, names: nm, attend: byRounds && rs.valid.length > 1 && nm.length ? attend : undefined };
+      // 나누기를 안 건드렸으면 원래 차수별 분류·정산 금액을 그대로 살려요
+      if (o && o.amount === n && o.mine === mine && JSON.stringify(o.rounds?.map((r) => [r.amount, r.people]) || null) === JSON.stringify(it.rounds?.map((r) => [r.amount, r.people]) || null)) {
+        if (o.rounds) it.rounds = o.rounds;
+        if (o.settle?.amounts && JSON.stringify(o.settle.names) === JSON.stringify(nm)) it.settle.amounts = o.settle.amounts;
+      }
+    }
+    if (o && orig) {
+      const from = orig.day;
+      update((d) => {
+        if (from === k) {
+          setDay(d.days, k, { items: getDay(d.days, k).items.map((x) => (x.id === o.id ? it : x)), noSpend: false });
+        } else {
+          setDay(d.days, from, { items: getDay(d.days, from).items.filter((x) => x.id !== o.id) });
+          setDay(d.days, k, { items: getDay(d.days, k).items.concat([it]), noSpend: false });
+        }
+      });
+      closeEntry();
+      endEdit();
+      toast(from === k ? "기록을 고쳤어요." : md(dOf(k)) + "로 옮겨서 고쳤어요.");
+      return;
     }
     update((d) => setDay(d.days, k, { items: getDay(d.days, k).items.concat([it]), noSpend: false }));
     setAmount("");
@@ -76,7 +166,8 @@ export function EntrySheet() {
     closeEntry();
     const p = periodOf(k, cfg.cycleDay);
     if (p.start !== view.start) setView(p);
-    const dd = daysFor(p, planFor(S.periods, cfg, p), cfg.appts, cfg.trips, preZero(cfg, S.days)).find((x) => x.key === k)!;
+    // 보고 있던 달이면 화면과 같은 한도(남은 날에 나눠 쓰기 포함)로 알려줘요
+    const dd = (p.start === view.start && model.dayByKey(k)) || daysFor(p, planFor(S.periods, cfg, p), cfg.appts, cfg.trips, preZero(cfg, S.days)).find((x) => x.key === k)!;
     const oweNote = splitOn && n > mine ? " 받을 돈 " + won(n - mine) + "은 지금 송금 요청하세요." : "";
     if (dd.trip) {
       const tl = dd.trip.budget - (tripSpent(S.days, dd.trip) + mine);
@@ -90,6 +181,14 @@ export function EntrySheet() {
     const l = limitOf(S.days, dd) - (spentOf(S.days, k) + mine);
     toast(won(mine) + " 기록했어요. " + (l >= 0 ? "이날 " + won(l) + " 남았어요." : "이날 한도를 " + won(-l) + " 넘었어요.") + oweNote, l < 0);
   };
+  const remove = () => {
+    if (!orig) return;
+    const { day: from, it: o } = orig;
+    update((d) => setDay(d.days, from, { items: getDay(d.days, from).items.filter((x) => x.id !== o.id) }));
+    closeEntry();
+    endEdit();
+    toast("기록을 지웠어요.");
+  };
   const onEnter = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") addEntry();
   };
@@ -100,8 +199,8 @@ export function EntrySheet() {
   };
 
   return (
-    <Sheet open={entry.open} onClose={closeEntry} labelledBy="entryTitle" autoFocus={false}>
-      <SheetHead id="entryTitle" title={(day === today ? "오늘" : md(dOf(day))) + " 쓴 돈 적기"} onClose={closeEntry} />
+    <Sheet open={entry.open} onClose={close} labelledBy="entryTitle" autoFocus={false}>
+      <SheetHead id="entryTitle" title={orig ? "쓴 돈 고치기" : (day === today ? "오늘" : md(dOf(day))) + " 쓴 돈 적기"} onClose={close} />
       <div className="amount-wrap">
         <MoneyInput id="amount" ref={amtRef} className="" autoComplete="off" placeholder="0" aria-label="금액" value={byRounds ? fmt(rs.total) : amount} onValue={setAmount} onKeyDown={onEnter} readOnly={byRounds} aria-readonly={byRounds} />
         <span aria-hidden="true">원</span>
@@ -243,9 +342,16 @@ export function EntrySheet() {
           )}
         </div>
       )}
-      <button className="btn" disabled={!n} onClick={addEntry}>
-        기록하기
-      </button>
+      <div className="cta-bar">
+        {orig && (
+          <button className="btn danger" onClick={remove}>
+            삭제
+          </button>
+        )}
+        <button className="btn" disabled={!n} onClick={addEntry}>
+          {orig ? "저장" : "기록하기"}
+        </button>
+      </div>
     </Sheet>
   );
 }

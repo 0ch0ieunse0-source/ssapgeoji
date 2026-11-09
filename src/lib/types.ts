@@ -66,6 +66,8 @@ export interface Settings {
   homeHidden?: string[];
   /** 여행 (여러 날을 한 예산으로) */
   trips?: import("./trip").Trip[];
+  /** 남은 돈: "spread"면 남은 날 한도에 나눠 더해요. 없거나 "reserve"면 예비비에 모아요 */
+  leftover?: "spread" | "reserve";
 }
 
 export interface Plan {

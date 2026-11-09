@@ -16,7 +16,7 @@ const dday = (k: string, today: string) => {
 
 /** 그날 카드 (달력 가운데): 내역, 남은 한도, + 이날 쓴 돈 추가, ⋯(한도 바꾸기·무지출·약속) */
 export function DaySheet() {
-  const { S, today, dayKey, closeDay, model, update, toast, openEntry, toggleNoSpend, openAppt } = useApp();
+  const { S, today, dayKey, closeDay, model, update, toast, openEntry, editEntry, toggleNoSpend, openAppt } = useApp();
   const d = model && dayKey ? model.dayByKey(dayKey) : undefined;
   const [limitV, setLimitV] = useState("");
   const [more, setMore] = useState(false);
@@ -116,7 +116,12 @@ export function DaySheet() {
             <i aria-hidden="true" />
             <span className="t">
               <b>{isAppt ? cfg.apptNames?.[d.key] || "약속" : "이날 한도"}</b>
-              <span>{(isAppt ? "약속 · " : "") + "한도 " + won(l) + (l !== d.base ? " (원래 " + won(d.base) + ")" : "")}</span>
+              <span>
+                {(isAppt ? "약속 · " : "") +
+                  "한도 " +
+                  won(l) +
+                  (l !== d.base ? " (원래 " + won(d.base) + ")" : d.flex ? " (남은 돈 나눠 " + (d.flex > 0 ? "+" : "−") + won(Math.abs(d.flex)) + ")" : "")}
+              </span>
             </span>
             <span className="chev" aria-hidden="true">›</span>
           </button>
@@ -129,24 +134,17 @@ export function DaySheet() {
               const subs = [catsLabel(it), (it.pay || "check") === "card" ? "신용카드" : "체크·현금"];
               if (it.amount > mineOf(it)) subs.push("결제 " + won(it.amount) + (it.rounds?.length ? "(" + roundsLabel(it.rounds.length) + ")" : ""));
               return (
-                <li key={it.id} style={{ borderLeftColor: catVar(it.cat) }}>
-                  <span className="t">
-                    <b>{it.memo || it.cat || "기타"}</b>
-                    <span>{subs.join(" · ")}</span>
-                  </span>
-                  <span className="a">
-                    <b>{"-" + won(mineOf(it))}</b>
-                    <button
-                      className="del"
-                      aria-label={won(it.amount) + " 기록 삭제"}
-                      onClick={() => {
-                        update((data) => setDay(data.days, d.key, { items: getDay(data.days, d.key).items.filter((x) => x.id !== it.id) }));
-                        toast("기록을 지웠어요.");
-                      }}
-                    >
-                      삭제
-                    </button>
-                  </span>
+                <li key={it.id} className="tap" style={{ borderLeftColor: catVar(it.cat) }}>
+                  <button className="ev-btn" onClick={() => editEntry(d.key, it.id)} aria-label={(it.memo || it.cat || "기타") + " " + won(mineOf(it)) + ", 고치기"}>
+                    <span className="t">
+                      <b>{it.memo || it.cat || "기타"}</b>
+                      <span>{subs.join(" · ")}</span>
+                    </span>
+                    <span className="a">
+                      <b>{"-" + won(mineOf(it))}</b>
+                      <span className="chev" aria-hidden="true">›</span>
+                    </span>
+                  </button>
                 </li>
               );
             })}
@@ -213,7 +211,7 @@ export function DaySheet() {
             <p className="hint" aria-live="polite">
               {"원래 한도 " + won(d.base) + (lv > d.base ? " · 예비비에서 " + won(lv - d.base) + "을 더 써요." : lv < d.base ? " · " + won(d.base - lv) + "이 예비비로 남아요." : "")}
             </p>
-            <div className="lim-acts">
+            <div className="cta-bar">
               <button className="btn gray" onClick={() => saveLimit(null)}>
                 원래대로
               </button>

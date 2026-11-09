@@ -61,8 +61,9 @@ function Shell() {
           </ErrorBoundary>
         </main>
         {!model && <footer>기록은 이 기기의 브라우저에만 저장되고 다른 사람은 볼 수 없어요. 설정에서 백업 파일을 저장해 두면 다른 기기로 옮길 수 있어요.</footer>}
+        {!model && <div className="cta-space" aria-hidden="true" />}
       </div>
-      {model && !(route === "setup" && sub === "account") && <Dock />}
+      {model && !(route === "setup" && ["account", "budget", "money", "goal", "look"].includes(sub)) && <Dock />}
       <DaySheet />
       {model && <ApptSheet target={appt} onClose={() => openAppt(null)} />}
       <EntrySheet />

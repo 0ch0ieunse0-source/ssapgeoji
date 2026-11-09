@@ -5,6 +5,7 @@ import { Fragment, useState } from "react";
 import { HomeEditor } from "../components/HomeEditor";
 import { homeVisible, type HomeBlockId } from "../lib/home";
 import { Sheet, SheetHead } from "../components/Sheet";
+import { ReserveSheet } from "../sheets/ReserveSheet";
 import { AccountFields, ShareButtons } from "../components/SettlePanel";
 import { attendNote, settleMessage, settleMessageFrom } from "../lib/settle";
 import { loadAccount } from "../state/account";
@@ -33,7 +34,7 @@ const readSnooze = () => {
 };
 
 export function HomeView() {
-  const { S, today, update, toast, go, openEntry, openDay, toggleNoSpend, account } = useApp();
+  const { S, today, update, toast, go, openEntry, editEntry, toggleNoSpend, account } = useApp();
   const [snoozedOn, setSnoozedOn] = useState(readSnooze);
   const [editing, setEditing] = useState(false);
   const banner = loginBanner({ loggedIn: !!account.id, days: S.days, today, snoozedOn });
@@ -45,7 +46,8 @@ export function HomeView() {
     }
     setSnoozedOn(today);
   };
-  const { cfg, days, weeks, view, cur, isCur, refKey, dayByKey, L, budget } = useModel();
+  const { cfg, days, weeks, view, cur, isCur, refKey, dayByKey, L, budget, flex } = useModel();
+  const [reserveOpen, setReserveOpen] = useState(false);
   const D = L; // 생활비 계산용
   const R = S.days; // 실제 기록 (목록·받을 돈·카드)
   const cd = cfg.cycleDay;
@@ -131,10 +133,10 @@ export function HomeView() {
               <span className="k">무지출 챌린지</span>
               <span className="v">{days.filter((d) => isNoSpend(R, d.key)).length + "일"}</span>
             </div>
-            <div className="stat">
-              <span className="k">예비비</span>
-              <Won className="v" n={total - days.reduce((s, d) => s + limitOf(D, d), 0)} />
-            </div>
+            <button className="stat" onClick={() => setReserveOpen(true)} aria-label={"예비비 " + won(flex.reserve) + ", 자세히 보기"}>
+              <span className="k">예비비 ›</span>
+              <Won className="v" n={flex.reserve} />
+            </button>
             <button className="stat" onClick={jumpOwe}>
               <span className="k">받을 돈</span>
               <span className="v">{won(oweSum)}</span>
@@ -151,7 +153,7 @@ export function HomeView() {
             </div>
             <ul className="tx">
               {items.map((it) => (
-                <TxRow key={it.id} it={it} onClick={() => openDay(ref.key)} />
+                <TxRow key={it.id} it={it} onClick={() => editEntry(ref.key, it.id)} />
               ))}
             </ul>
             {items.length === 0 && (
@@ -361,6 +363,7 @@ export function HomeView() {
         홈 편집
       </button>
       <HomeEditor open={editing} onClose={() => setEditing(false)} />
+      <ReserveSheet open={reserveOpen} onClose={() => setReserveOpen(false)} />
 
       <Sheet open={!!msgFor} onClose={() => setMsgFor(null)} labelledBy="msgTitle">
         <SheetHead id="msgTitle" title="정산 메시지" onClose={() => setMsgFor(null)} />

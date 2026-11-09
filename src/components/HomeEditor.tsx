@@ -87,7 +87,7 @@ export function HomeEditor({ open, onClose }: { open: boolean; onClose: () => vo
           );
         })}
       </ul>
-      <div className="he-acts">
+      <div className="cta-bar">
         <button
           className="btn gray"
           onClick={() => {
