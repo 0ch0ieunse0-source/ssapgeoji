@@ -1,4 +1,7 @@
 import { lockTaps } from "../lib/tapLock";
+import { hourLabel } from "../lib/push";
+import { loadPush, pushEnabled } from "../state/push";
+import { AlarmView } from "./AlarmView";
 import { useEffect, useRef, useState } from "react";
 import { leftoverOf, type Leftover } from "../lib/flex";
 import { MoneyInput, SmallIco } from "../components/common";
@@ -667,6 +670,7 @@ export function SetupView({ section = "" }: { section?: string }) {
 
   if (section === "account") return <AccountView />;
   if (section === "share") return <SpaceShowView />;
+  if (section === "alarm") return <AlarmView />;
 
   // 처음 시작할 때: 두 장으로 나눠요. 둘 다 '나중에 입력하기'로 건너뛸 수 있어요
   if (!cfg) {
@@ -779,6 +783,7 @@ export function SetupView({ section = "" }: { section?: string }) {
     );
 
   const unread = currentUnread().length;
+  const pushState = loadPush();
   const row = (key: string, title: string, desc: string, onClick: () => void, extra?: JSX.Element) => (
     <button key={key} className="menu-row" onClick={onClick}>
       <span className="mt">
@@ -818,6 +823,7 @@ export function SetupView({ section = "" }: { section?: string }) {
       <section className="card menu" aria-label="기록과 도움말">
         {row("account", "계정", account.id ? account.id + "로 로그인됨" : "로그인하면 어디서 열어도 같은 기록 (선택)", () => go("setup/account"), account.id ? undefined : <span className="badge">추천</span>)}
         {row("share", "스페이스 공개 설정", "친구가 내 방에서 볼 수 있는 것", () => go("setup/share"))}
+        {pushEnabled() && row("alarm", "알림", pushState.on ? "매일 " + hourLabel(pushState.hour) + " 정리 알림 켜짐" : "매일 오늘 쓴 돈 정리 알림 (꺼짐)", () => go("setup/alarm"))}
         {row("data", "기록 보관", "백업 저장·불러오기, 모든 기록 지우기", () => go("setup/data"))}
         {row("notice", "공지사항", "", () => go("notice"), unread ? <span className="badge">{"새 소식 " + unread}</span> : undefined)}
         {row("install", "홈 화면에 추가하는 법", "Safari·Chrome에서 앱처럼 쓰기", () => openGuide(true))}
