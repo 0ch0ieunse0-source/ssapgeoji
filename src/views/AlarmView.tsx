@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { PageHead } from "../components/PageHead";
-import { hourLabel, PUSH_HOURS } from "../lib/push";
 import { useApp } from "../state/app";
-import { changeHour, currentSupport, loadPush, turnOff, turnOn } from "../state/push";
+import { currentSupport, loadPush, turnOff, turnOn } from "../state/push";
 
-/** 마이페이지 → 알림: 매일 정한 시간에 '오늘 쓴 돈 정리했나요?' 알림 */
+/** 마이페이지 → 알림: 매일 저녁 8시에 '오늘 쓴 돈 정리했나요?' 알림 */
 export function AlarmView() {
   const { toast, openGuide } = useApp();
   const [p, setP] = useState(loadPush);
@@ -24,46 +23,27 @@ export function AlarmView() {
   };
   const on = () =>
     run(async () => {
-      const r = await turnOn(p.hour);
+      const r = await turnOn();
       if (r === "denied") return toast("알림이 허용되지 않았어요. 폰 설정에서 거지노트 알림을 켜 주세요.", true);
-      setP({ on: true, hour: p.hour });
-      toast("매일 " + hourLabel(p.hour) + "에 알려드릴게요.");
+      setP({ on: true });
+      toast("매일 저녁 8시에 알려드릴게요.");
     });
   const off = () =>
     run(async () => {
-      await turnOff(p.hour);
-      setP({ on: false, hour: p.hour });
+      await turnOff();
+      setP({ on: false });
       toast("매일 알림을 껐어요.");
     });
-  const pick = (h: number) => {
-    if (h === p.hour) return;
-    if (!p.on) return setP({ ...p, hour: h });
-    run(async () => {
-      await changeHour(h);
-      setP({ on: true, hour: h });
-      toast("이제 " + hourLabel(h) + "에 알려드릴게요.");
-    });
-  };
 
   return (
     <div className="view">
       <PageHead title="알림" fallback="setup" />
       <section className="card setup-sec">
         <span className="step">매일 정리 알림</span>
-        <p className="hint">정한 시간에 "오늘 쓴 돈 정리했나요?" 알림을 보내드려요. 기록은 서버로 가지 않아서, 이미 정리한 날에도 알림이 가요.</p>
+        <p className="hint">매일 저녁 8시에 "오늘 쓴 돈 정리했나요?" 알림을 보내드려요. 기록은 서버로 가지 않아서, 이미 정리한 날에도 알림이 가요.</p>
 
         {support === "ok" ? (
           <>
-            <div className="lbl" id="alarmHour">
-              알림 시간
-            </div>
-            <div className="chips" role="radiogroup" aria-labelledby="alarmHour">
-              {PUSH_HOURS.map((h) => (
-                <button key={h} className="chip" role="radio" aria-checked={p.hour === h} aria-pressed={p.hour === h} disabled={busy} onClick={() => pick(h)}>
-                  {hourLabel(h)}
-                </button>
-              ))}
-            </div>
             {denied && !p.on && <p className="hint err">이 폰에서 거지노트 알림이 꺼져 있어요. 폰 설정 → 알림 → 거지노트에서 켜 주세요.</p>}
             {p.on ? (
               <button className="btn line" disabled={busy} onClick={off}>
@@ -71,10 +51,10 @@ export function AlarmView() {
               </button>
             ) : (
               <button className="btn" disabled={busy} onClick={on}>
-                {busy ? "켜는 중…" : "매일 " + hourLabel(p.hour) + "에 알림 받기"}
+                {busy ? "켜는 중…" : "매일 저녁 8시에 알림 받기"}
               </button>
             )}
-            {p.on && <p className="hint">{"켜져 있어요 · 매일 " + hourLabel(p.hour)}</p>}
+            {p.on && <p className="hint">켜져 있어요 · 매일 저녁 8시</p>}
           </>
         ) : support === "install" ? (
           <>

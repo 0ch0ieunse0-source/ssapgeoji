@@ -3,6 +3,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { applyAccent } from "./lib/theme";
 import { Onboarding } from "./components/Onboarding";
 import { WhatsNew } from "./components/WhatsNew";
+import { PushPrompt } from "./components/PushPrompt";
 import { UpdateToast } from "./components/UpdateToast";
 import { BANK_ROUTES, BankTabs, Banner, Dock, PeriodNav, Toast, TopBar } from "./components/Shell";
 import { SpaceView } from "./views/SpaceView";
@@ -71,6 +72,7 @@ function Shell() {
       <UpdateToast />
       <WhatsNew />
       {model && <WishSync />}
+      {model && <PushPrompt />}
       <Toast />
     </>
   );

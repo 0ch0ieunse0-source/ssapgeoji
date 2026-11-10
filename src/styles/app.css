@@ -1018,3 +1018,8 @@ label .count { color: var(--muted); font-weight: 500; }
 .banner.has-x { padding-right: 40px; }
 .banner .banner-x { position: absolute; top: 4px; right: 4px; width: 36px; height: 36px; background: none; border: none; color: inherit; font-size: 15px; cursor: pointer; }
 .cta-bar.ask { background: var(--surface); border-top: 1px solid var(--line); padding-top: 14px; }
+/* 홈 '알림 받을까요?' 팝업 */
+.push-ask { display: flex; flex-direction: column; gap: 10px; text-align: center; }
+.push-ask-ic { font-size: 40px; line-height: 1; margin-top: 4px; }
+.push-ask h2 { margin: 4px 0 0; font-size: 19px; }
+.push-ask .hint { margin: 0 0 6px; }

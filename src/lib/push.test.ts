@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildPushPayload, hourLabel, keyBytes, PUSH_DEFAULT_HOUR, pushSupport } from "./push";
+import { buildPushPayload, hourLabel, keyBytes, PUSH_HOUR, pushSupport, shouldAskPush } from "./push";
 
 describe("매일 알림: 서버로 가는 값", () => {
   it("알림 주소·열쇠·시각·시간대만 보내요 (기록·금액 없음)", () => {
@@ -15,8 +15,8 @@ describe("매일 알림: 서버로 가는 값", () => {
     expect(buildPushPayload(sub, 99, 0).p_hour).toBe(23);
     expect(buildPushPayload(sub, -3, 0).p_hour).toBe(0);
   });
-  it("기본 시간은 저녁 8시", () => {
-    expect(PUSH_DEFAULT_HOUR).toBe(20);
+  it("알림은 모두 저녁 8시", () => {
+    expect(PUSH_HOUR).toBe(20);
     expect(hourLabel(20)).toBe("저녁 8시");
   });
   it("공개 키를 바이트로", () => {
@@ -40,5 +40,19 @@ describe("알림을 켤 수 있는 화면", () => {
     const and = "Mozilla/5.0 (Linux; Android 14) Chrome/120 Mobile";
     expect(pushSupport({ ...base, ua: and, standalone: false })).toBe("ok");
     expect(pushSupport({ ...base, ua: and, standalone: false, hasPush: false })).toBe("no");
+  });
+});
+
+describe("홈 '알림 받을까요?' 팝업", () => {
+  const base = { support: "ok" as const, permission: "default", on: false, snoozedOn: null, today: "2026-11-10" };
+  it("처음엔 물어봐요", () => expect(shouldAskPush(base)).toBe(true));
+  it("이미 켰거나, 거절했거나, 받을 수 없는 화면이면 안 물어봐요", () => {
+    expect(shouldAskPush({ ...base, on: true })).toBe(false);
+    expect(shouldAskPush({ ...base, permission: "denied" })).toBe(false);
+    expect(shouldAskPush({ ...base, support: "install" })).toBe(false);
+  });
+  it("[나중에] 누르면 2주 뒤에 다시", () => {
+    expect(shouldAskPush({ ...base, snoozedOn: "2026-11-01" })).toBe(false);
+    expect(shouldAskPush({ ...base, snoozedOn: "2026-10-27" })).toBe(true);
   });
 });
